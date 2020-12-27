@@ -96,6 +96,7 @@ if __name__ == '__main__':
         ckpt.restore(ckpt_manager.latest_checkpoint)
 
     # Train!
+    logger.info('*********** BEGIN TRAINING LOOP ***********')
     loss_plot = []
     for epoch in range(start_epoch, CONFIG.EPOCHS):
         start = time.time()
@@ -106,12 +107,13 @@ if __name__ == '__main__':
             total_loss += t_loss
 
             if batch % 100 == 0:
-                logger.info(f'Epoch: {epoch+1} | Batch {batch+1}/{len(dataset)} | Loss: {batch_loss.numpy() / int(target.shape[1])}'
+                logger.info(f'Epoch: {epoch+1} | Batch {batch+1}/{len(dataset)} | Loss: {batch_loss.numpy() / int(target.shape[1])}')
         
         # storing the epoch end loss value to plot later
         loss_plot.append(total_loss / num_steps)
 
         if epoch % 5 == 0:
+            logger.info('... saving checkpoint')
             ckpt_manager.save()
 
         logger.info('Epoch {} Loss {:.6f}'.format(epoch + 1, total_loss/num_steps))
