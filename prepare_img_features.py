@@ -19,8 +19,10 @@ from tqdm import tqdm
 import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
 
-model_config_dict = {'mobilenet_v2': {'model': tf.keras.applications.MobileNetV2}
-                    }
+model_config_dict = {'mobilenet_v2': {'model': tf.keras.applications.MobileNetV2,
+                                      'features_shape': 1280,
+                                      'attention_features_shape': 49}
+                     }
 
 def organise_data():
     """This function returns a flattened list of img, caption pairs. This is necessary since
@@ -45,7 +47,7 @@ def organise_data():
     # lead to 30,000 examples.
     train_image_paths = image_paths[:6000]
 
-    
+
     print('The number of captions in this training set is: ', len(train_image_paths))
 
     train_captions = []
