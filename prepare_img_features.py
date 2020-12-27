@@ -44,6 +44,8 @@ def organise_data():
     # Approximately each image id has 5 captions associated with it, so that will 
     # lead to 30,000 examples.
     train_image_paths = image_paths[:6000]
+
+    
     print('The number of captions in this training set is: ', len(train_image_paths))
 
     train_captions = []
@@ -111,6 +113,11 @@ if __name__ == '__main__':
 
     captions_dir = os.path.join(CONFIG.CACHE_DIR_ROOT, 'mobilenet_v2_captions')
     features_dir = os.path.join(CONFIG.CACHE_DIR_ROOT, 'mobilenet_v2_features')
+
+    if not os.path.exists(captions_dir):
+        os.mkdir(captions_dir)
+    if not os.path.exists(features_dir):
+        os.mkdir(features_dir)
 
     # CAPTIONS
     train_captions, img_name_vector = organise_data()
