@@ -13,6 +13,7 @@ import time
 import pickle
 
 from config import CONFIG
+from tools.timer import timer
 import utils
 from tqdm import tqdm
 
@@ -24,45 +25,8 @@ model_config_dict = {'mobilenet_v2': {'model': tf.keras.applications.MobileNetV2
                                       'attention_features_shape': 49}
                      }
 
-def organise_data():
-    """This function returns a flattened list of img, caption pairs. This is necessary since
-    there are multiple captions per image. The work has been taken and altered from Tensorflow
-    Image Captioning tutorial."""
 
-    with open(CONFIG.ANNOTATION_FILE, 'r') as f:
-        annotations = json.load(f)
-
-    # Group all captions together having the same image ID.
-    image_path_to_caption = collections.defaultdict(list)
-    for val in annotations['annotations']:
-        caption = f"<start> {val['caption']} <end>"
-        image_path = os.path.join(CONFIG.IMAGES_DIR,f'COCO_train2014_' + '%012d.jpg' % (val['image_id']))
-        image_path_to_caption[image_path].append(caption)
-
-    image_paths = list(image_path_to_caption.keys())
-    random.shuffle(image_paths)
-
-    # Select the first 6000 image_paths from the shuffled set.
-    # Approximately each image id has 5 captions associated with it, so that will 
-    # lead to 30,000 examples.
-    train_image_paths = image_paths[:6000]
-
-
-    print('The number of captions in this training set is: ', len(train_image_paths))
-
-    train_captions = []
-    img_name_vector = []
-    for image_path in train_image_paths:
-        caption_list = image_path_to_caption[image_path]
-        train_captions.extend(caption_list)
-        img_name_vector.extend([image_path] * len(caption_list))
-
-    assert len(train_captions) == len(img_name_vector)
-    
-    #caption_filename_tuple = list(zip(train_captions, img_name_vector))
-
-    return train_captions, img_name_vector
-
+@timer
 def preprocess_img_and_cache(img_name_vector, cache_dir, model_config=model_config_dict['mobilenet_v2']):
 
     # Get unique images
@@ -93,6 +57,7 @@ def preprocess_img_and_cache(img_name_vector, cache_dir, model_config=model_conf
             print(output_filename)
             np.save(output_filename, bf.numpy())
 
+@timer
 def reconfigure_cnn(model_config):
 
     model = model_config['model'](include_top=False, weights='imagenet')
@@ -122,7 +87,7 @@ if __name__ == '__main__':
         os.mkdir(features_dir)
 
     # CAPTIONS
-    train_captions, img_name_vector = organise_data()
+    train_captions, img_name_vector = utils.organise_data()
     caption_filename_tuple = list(zip(train_captions, img_name_vector))
 
     with open(os.path.join(captions_dir,'caption_filename_tuple.pkl'), 'wb') as pickle_file:

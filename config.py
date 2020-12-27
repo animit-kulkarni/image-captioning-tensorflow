@@ -14,3 +14,4 @@ class CONFIG:
         UNITS = 512
         VOCAB_SIZE = VOCABULARY_TOP_K + 1
         EPOCHS = 1
+

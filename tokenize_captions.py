@@ -6,9 +6,12 @@ import collections
 import random
 from tqdm import tqdm
 import numpy as np
+import logging
 
 from config import CONFIG
+from tools.timer import timer
 
+logger = logging.getLogger(__name__)
 seed = 42
 np.random.seed(seed)  
 
@@ -17,7 +20,6 @@ np.random.seed(seed)
 # 3. reformat the image name vector to match dims 
 # 4. maybe cache these somewhere
 
-
 class TokensManager:
 
     def __init__(self):
@@ -25,7 +27,7 @@ class TokensManager:
         self.tokenizer = tf.keras.preprocessing.text.Tokenizer(num_words=CONFIG.VOCABULARY_TOP_K,
                                                       oov_token="<unk>",
                                                       filters='!"#$%&()*+.,-/:;=?@[\]^_`{|}~ ')
-        
+    @timer
     def prepare_imgs_tokens(self, path):
 
         caption_filename_tuple = self._get_caption_filename_tuple(path)
@@ -33,7 +35,7 @@ class TokensManager:
         img_names_list = self._reformat_img_name_vectors(caption_filename_tuple, caption_vectors)
         train_captions, val_captions = self._train_val_split(list(zip(img_names_list, caption_vectors)))
 
-        print(f'The length of images: train ({len(train_captions)}), val ({len(val_captions)})')
+        logger.info(f'The length of images: train ({len(train_captions)}), val ({len(val_captions)})')
 
         # This is just a sanity check to see if random seed is actually working
         if seed == 30:
@@ -54,7 +56,7 @@ class TokensManager:
 
         return train_captions, val_captions
 
-
+    @timer
     def _tokenize_captions(self, caption_filename_tuple, padding='post'):
         
         captions = [x[0] for x in caption_filename_tuple]
@@ -76,6 +78,7 @@ class TokensManager:
 
         return caption_vector
 
+    @timer
     def _reformat_img_name_vectors(self, caption_filename_tuple, caption_vector):
 
         img_name_vector = [x[1] for x in caption_filename_tuple]
@@ -97,9 +100,10 @@ class TokensManager:
     def save_caption_file_tuples(self, train_captions, val_captions):
 
         caption_cache_dir = os.path.join(CONFIG.CACHE_DIR_ROOT, 'mobilenet_v2_captions')
+        logger.info(f'Saving train_captions, val_captions to {caption_cache_dir}')
+        
         with open(os.path.join(caption_cache_dir,'train_captions.pkl'), 'wb') as f:
             pickle.dump(train_captions, f)
-        
         with open(os.path.join(caption_cache_dir,'val_captions.pkl'), 'wb') as f:
             pickle.dump(val_captions, f)
 
