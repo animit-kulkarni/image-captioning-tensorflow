@@ -1,7 +1,13 @@
 import numpy as np
 import os
+import json
+import collections
 
 from config import CONFIG
+
+
+seed = 42
+np.random.seed(seed)  
 
 def organise_data():
     """This function returns a flattened list of img, caption pairs. This is necessary since
@@ -19,7 +25,7 @@ def organise_data():
         image_path_to_caption[image_path].append(caption)
 
     image_paths = list(image_path_to_caption.keys())
-    random.shuffle(image_paths)
+    np.random.shuffle(image_paths)
 
     # Select the first 6000 image_paths from the shuffled set.
     # Approximately each image id has 5 captions associated with it, so that will 

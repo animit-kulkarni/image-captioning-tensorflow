@@ -6,6 +6,7 @@ import collections
 import json
 import random
 import tensorflow as tf
+import numpy as np
 # tf.enable_eager_execution()
 
 import re
@@ -17,8 +18,6 @@ from tools.timer import timer
 import utils
 from tqdm import tqdm
 
-import ssl
-ssl._create_default_https_context = ssl._create_unverified_context
 
 model_config_dict = {'mobilenet_v2': {'model': tf.keras.applications.MobileNetV2,
                                       'features_shape': 1280,

@@ -1,9 +1,9 @@
 class CONFIG:
         # Paths
-        ANNOTATION_FILE = '/Users/animitkulkarni/Python/InstagramCaptioner/data_management/annotations/captions_train2014.json'
-        IMAGES_DIR = '/Users/animitkulkarni/Python/training-sets/raw/train2014'
-        CACHE_DIR_ROOT = '/Users/animitkulkarni/Python/training-sets/interim/'
-        CHECKPOINT_PATH = "/Users/animitkulkarni/Python/models/mobilnet_v2_bahdanau"
+        ANNOTATION_FILE = '/mnt/pythonfiles/training-sets/raw/MSCOCO/annotations/captions_train2014.json'
+        IMAGES_DIR = '/mnt/pythonfiles/training-sets/raw/MSCOCO/train2014'
+        CACHE_DIR_ROOT = '/mnt/pythonfiles/training-sets/interim'
+        CHECKPOINT_PATH = "/mnt/pythonfiles/models/mobilenet_v2_bahdanau"
 
 
         # Training parameters

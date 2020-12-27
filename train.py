@@ -18,7 +18,7 @@ logging.basicConfig(**LOGGING_CONFIG.print_kwargs)
 logger = logging.getLogger(__name__)
 logger.info('Logging has begun!')
 
-@timer
+
 @tf.function
 def train_step(img_tensor, target, tokenizer, loss_object):
   loss = 0
@@ -96,7 +96,7 @@ if __name__ == '__main__':
         ckpt.restore(ckpt_manager.latest_checkpoint)
 
     # Train!
-    logger.info('*********** BEGIN TRAINING LOOP ***********')
+    logger.info('       *********** BEGIN TRAINING LOOP ***********')
     loss_plot = []
     for epoch in range(start_epoch, CONFIG.EPOCHS):
         start = time.time()
@@ -106,8 +106,8 @@ if __name__ == '__main__':
             batch_loss, t_loss = train_step(img_tensor, target, tokens_manager.tokenizer, loss_object)
             total_loss += t_loss
 
-            if batch % 100 == 0:
-                logger.info(f'Epoch: {epoch+1} | Batch {batch+1}/{len(dataset)} | Loss: {batch_loss.numpy() / int(target.shape[1])}')
+            if batch % 5 == 0:
+                logger.info(f'Epoch: {epoch+1} | Batch {batch+1}/{CONFIG.BATCH_SIZE} | Loss: {batch_loss.numpy() / int(target.shape[1])}')
         
         # storing the epoch end loss value to plot later
         loss_plot.append(total_loss / num_steps)

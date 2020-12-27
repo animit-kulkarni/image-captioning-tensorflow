@@ -37,10 +37,6 @@ class TokensManager:
 
         logger.info(f'The length of images: train ({len(train_captions)}), val ({len(val_captions)})')
 
-        # This is just a sanity check to see if random seed is actually working
-        if seed == 30:
-            assert train_captions[0][0].split('_')[-1] == '000000247874.jpg', 'For this seed, we expected img 000000247874.jpg to be top of training set' 
-
         return train_captions, val_captions
 
     def _get_caption_filename_tuple(self, path):
