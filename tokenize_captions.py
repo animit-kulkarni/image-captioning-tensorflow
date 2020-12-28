@@ -111,7 +111,10 @@ if __name__ == '__main__':
         
         tokenize_captions = TokensManager()
         train_captions, val_captions = tokenize_captions.prepare_imgs_tokens(path)
-        tokenize_captions.save(train_captions, val_captions)
+        
+        tokenizer_save_path = os.path.join(CONFIG.CACHE_DIR_ROOT, 'mobilenet_v2_captions', 'mscoco_tokenizer.pkl') 
+        pickle.dump(tokenize_captions.tokenizer, open(tokenizer_save_path, 'wb'))
+        #tokenize_captions.save_caption_file_tuples(train_captions, val_captions)
 
 
     

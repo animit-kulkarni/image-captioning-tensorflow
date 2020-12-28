@@ -53,7 +53,6 @@ def preprocess_img_and_cache(img_name_vector, cache_dir, model_config=model_conf
             # under the file naming convention f'{original_img_name}.jpg.npy - neat!
             original_img_name = path_of_feature.split('/')[-1]
             output_filename = os.path.join(cache_dir, original_img_name)
-            print(output_filename)
             np.save(output_filename, bf.numpy())
 
 @timer
