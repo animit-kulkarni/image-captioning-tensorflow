@@ -3,6 +3,7 @@ import numpy as np
 import pickle
 import os
 import time
+from datetime import datetime
 import logging
 
 from config import CONFIG
@@ -48,6 +49,8 @@ def train_step(img_tensor, target, tokenizer, loss_object):
 
 if __name__ == '__main__':
 
+    model_id = datetime.now().strftime("%d%m%Y-%H%M%S")
+
     caption_filename_tuple_path = os.path.join(CONFIG.CACHE_DIR_ROOT, 'mobilenet_v2_captions', 'caption_filename_tuple.pkl')
         
     logger.info('Preparing tokens')
@@ -74,11 +77,15 @@ if __name__ == '__main__':
     decoder = RNN_Decoder(CONFIG.EMBEDDING_SIZE, CONFIG.UNITS, CONFIG.VOCAB_SIZE)
 
     # Optimizer
-    optimizer = tf.keras.optimizers.Adam()
+    optimizer = tf.keras.optimizers.Adam(learning_rate=CONFIG.LEARNING_RATE,
+                                         beta_1=0.9,
+                                         beta_2=0.999,
+                                         epsilon=1e-7,)
+
     loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True, reduction='none')
 
     # Admin
-    checkpoint_path = os.path.join(CONFIG.CHECKPOINT_PATH, 'checkpoints/train')
+    checkpoint_path = os.path.join(CONFIG.CHECKPOINT_PATH, 'checkpoints/train', model_id)
     if not os.path.exists(checkpoint_path):
         logger.info(f'Creating directory: {checkpoint_path}')
         os.makedirs(checkpoint_path)
@@ -95,26 +102,40 @@ if __name__ == '__main__':
         # restoring the latest checkpoint in checkpoint_path
         ckpt.restore(ckpt_manager.latest_checkpoint)
 
+    # Tensorboard
+    train_log_dir = os.path.join(CONFIG.LOGS_DIR, model_id)
+    if not os.path.exists(train_log_dir):
+        logger.info(f'Creating directory: {train_log_dir}')
+        os.makedirs(train_log_dir)
+    
+    train_summary_writer = tf.summary.create_file_writer(train_log_dir)
+
     # Train!
     logger.info('       *********** BEGIN TRAINING LOOP ***********')
     loss_plot = []
+    step = 0
+    num_steps = len(img_name_train)//CONFIG.BATCH_SIZE
     for epoch in range(start_epoch, CONFIG.EPOCHS):
         start = time.time()
         total_loss = 0
 
         for (batch, (img_tensor, target)) in enumerate(dataset):
             batch_loss, t_loss = train_step(img_tensor, target, tokens_manager.tokenizer, loss_object)
+            step += 1
             total_loss += t_loss
 
             if batch % 5 == 0:
-                logger.info(f'Epoch: {epoch+1} | Batch {batch+1}/{CONFIG.BATCH_SIZE} | Loss: {batch_loss.numpy() / int(target.shape[1])}')
+                logger.info(f'Epoch: {epoch+1}/{CONFIG.EPOCHS} | Batch {batch+1}/{num_steps} | Loss: {batch_loss.numpy() / int(target.shape[1])}')
+            
+            with train_summary_writer.as_default():
+                tf.summary.scalar('loss', batch_loss, step=step)
         
         # storing the epoch end loss value to plot later
         loss_plot.append(total_loss / num_steps)
 
         if epoch % 5 == 0:
-            logger.info('... saving checkpoint')
+            logger.info(f'... saving checkpoint after {epoch} epochs')
             ckpt_manager.save()
 
-        logger.info('Epoch {} Loss {:.6f}'.format(epoch + 1, total_loss/num_steps))
+        logger.info('Epoch: {} | Loss {:.6f}'.format(epoch + 1, total_loss/num_steps))
         logger.info('Time taken for 1 epoch {} sec\n'.format(time.time() - start))
