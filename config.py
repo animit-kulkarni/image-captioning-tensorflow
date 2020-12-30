@@ -6,7 +6,6 @@ class CONFIG:
         CHECKPOINT_PATH = '/mnt/pythonfiles/models/mobilenet_v2_bahdanau'
         LOGS_DIR = '.logs/gradient_tape'
 
-
         # Training parameters
         VOCABULARY_TOP_K = 5000
         BATCH_SIZE = 512
@@ -14,6 +13,6 @@ class CONFIG:
         EMBEDDING_SIZE = 256
         UNITS = 512
         VOCAB_SIZE = VOCABULARY_TOP_K + 1
-        EPOCHS = 30
-        LEARNING_RATE = 0.004
+        EPOCHS = 1
+        LEARNING_RATE = 0.005
 
