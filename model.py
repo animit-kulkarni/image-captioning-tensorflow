@@ -1,4 +1,4 @@
-import tensorflow as tf
+from tensorflow import python as tf
 
 class BahdanauAttention(tf.keras.Model):
   def __init__(self, units):
