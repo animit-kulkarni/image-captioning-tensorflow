@@ -14,6 +14,8 @@ from model import CNN_Encoder, RNN_Decoder
 from loss import loss_function
 from prepare_img_features import model_config_dict
 from tokenize_captions import TokensManager
+from inference import InstgramCaptioner
+
 
 seed = 42
 np.random.seed(seed)
@@ -158,7 +160,6 @@ if __name__ == '__main__':
     # decoder.save(os.path.join(checkpoint_path, 'decoder.tf'))
     # logger.info(f'      Decoder weights saved to {checkpoint_path}')
 
-    from inference import InstgramCaptioner
 
     tokenizer_path = os.path.join(CONFIG.CACHE_DIR_ROOT, 'mobilenet_v2_captions', 'coco_tokenizer.pkl') 
     checkpoint_path = '/mnt/pythonfiles/models/mobilenet_v2_bahdanau/checkpoints/train/29122020-113613'

@@ -21,9 +21,7 @@ class InstgramCaptioner:
             self.encoder = None
         else:
             self.encoder = CNN_Encoder(CONFIG.EMBEDDING_SIZE)
-                self.encoder.load_weights(os.path.join(model_weights_root, 'encoder_weights.tf'))
-
-
+            self.encoder.load_weights(os.path.join(model_weights_root, 'encoder_weights.tf'))
 
         if decoder is not None:
             self.decoder = decoder
