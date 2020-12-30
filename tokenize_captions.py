@@ -72,6 +72,8 @@ class TokensManager:
         # If you do not provide a max_length value, pad_sequences calculates it automatically
         caption_vector = tf.keras.preprocessing.sequence.pad_sequences(seqs, padding=padding)
 
+        self.max_length = utils.calc_max_length(seqs) # this is needed for inference
+
         return caption_vector
 
     @timer

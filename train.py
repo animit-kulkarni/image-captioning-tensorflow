@@ -15,6 +15,10 @@ from loss import loss_function
 from prepare_img_features import model_config_dict
 from tokenize_captions import TokensManager
 
+seed = 42
+np.random.seed(seed)
+tf.random.set_seed(seed)
+
 logging.basicConfig(**LOGGING_CONFIG.print_kwargs)
 logger = logging.getLogger(__name__)
 logger.info('Logging has begun!')
@@ -57,6 +61,8 @@ if __name__ == '__main__':
     tokens_manager = TokensManager()
     train_captions, val_captions = tokens_manager.prepare_imgs_tokens(caption_filename_tuple_path)
     tokens_manager.save_caption_file_tuples(train_captions, val_captions)
+    tokenizer_save_path = os.path.join(CONFIG.CACHE_DIR_ROOT, 'mobilenet_v2_captions', 'coco_tokenizer.pkl') 
+    pickle.dump(tokens_manager, open(tokenizer_save_path, 'wb'))
 
     img_name_train = [i[0] for i in train_captions]
     cap_train = [i[1] for i in train_captions]
@@ -139,3 +145,37 @@ if __name__ == '__main__':
 
         logger.info('Epoch: {} | Loss {:.6f}'.format(epoch + 1, total_loss/num_steps))
         logger.info('Time taken for 1 epoch {} sec\n'.format(time.time() - start))
+
+    logger.info(' **** Saving final model weights ****')
+
+    encoder.save_weights(os.path.join(checkpoint_path, 'encoder_weights.tf'))
+    logger.info(f'      Encoder weights saved to {checkpoint_path}')
+    decoder.save_weights(os.path.join(checkpoint_path, 'decoder_weights.tf'))
+    logger.info(f'      Decoder weights saved to {checkpoint_path}')
+
+    # encoder.save(os.path.join(checkpoint_path, 'encoder.tf'))
+    # logger.info(f'      Encoder weights saved to {checkpoint_path}')
+    # decoder.save(os.path.join(checkpoint_path, 'decoder.tf'))
+    # logger.info(f'      Decoder weights saved to {checkpoint_path}')
+
+    from inference import InstgramCaptioner
+
+    tokenizer_path = os.path.join(CONFIG.CACHE_DIR_ROOT, 'mobilenet_v2_captions', 'coco_tokenizer.pkl') 
+    checkpoint_path = '/mnt/pythonfiles/models/mobilenet_v2_bahdanau/checkpoints/train/29122020-113613'
+    image_path = os.path.join(CONFIG.IMAGES_DIR, os.listdir(CONFIG.IMAGES_DIR)[0])
+
+    current_img = cv2.imread(image_path)
+    cv2.imwrite('current_img.png', current_img)
+
+    caption_bot = InstgramCaptioner(checkpoint_path, tokenizer_path, CONFIG, encoder = encoder, decoder = decoder)
+
+    result, attention_plot = caption_bot.generate_caption(image_path)
+
+    print(result)
+
+
+
+
+
+
+
