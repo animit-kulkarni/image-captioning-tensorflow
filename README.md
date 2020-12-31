@@ -25,7 +25,8 @@ Note on dependencies:
 * When using cuda 10.1, tensorflow 2.3.1 didn't pick up GPU. Instead tensorflow 2.1. and 2.2 worked with GPU
 
 ## Setup and Usage
-`pip install virtualenv'
+
+`pip install virtualenv`
 
 `virtualenv -p [path-to-python] venv`
 
