@@ -6,6 +6,9 @@ class CONFIG:
         CHECKPOINT_PATH = '/mnt/pythonfiles/models/mobilenet_v2_bahdanau'
         LOGS_DIR = '.logs/gradient_tape'
 
+        # Prepare image features parameters
+        NUMBER_OF_IMAGES = 6000
+
         # Training parameters
         VOCABULARY_TOP_K = 5000
         BATCH_SIZE = 512

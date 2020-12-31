@@ -27,11 +27,10 @@ def organise_data():
     image_paths = list(image_path_to_caption.keys())
     np.random.shuffle(image_paths)
 
-    # Select the first 6000 image_paths from the shuffled set.
+    # Select the first e.g. 6000 image_paths from the shuffled set.
     # Approximately each image id has 5 captions associated with it, so that will 
     # lead to 30,000 examples.
-    train_image_paths = image_paths[:6000]
-
+    train_image_paths = image_paths[:CONFIG.NUMBER_OF_IMAGES]
     print('The number of captions in this training set is: ', len(train_image_paths))
 
     train_captions = []
