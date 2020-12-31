@@ -9,6 +9,7 @@ from config import CONFIG
 from model import CNN_Encoder, RNN_Decoder
 import utils
 from prepare_img_features import load_image
+from tools.timer import timer
 
 class InstgramCaptioner:
 
@@ -40,6 +41,7 @@ class InstgramCaptioner:
 
         self.tokens_manager = pickle.load(open(tokenizer_path, 'rb'))
 
+    @timer
     def generate_caption(self, image_path):
         """Use a CNN-GRU model to predict the caption to an image.
 
@@ -126,6 +128,7 @@ class InstgramCaptioner:
         img = tf.keras.applications.imagenet_utils.preprocess_input(img)
         return img
 
+    @timer
     def test_img_from_mscoco(self, idx, caption_filename_tuple_path, output_file='current_img.png'):
         """Test the model on an image from the downloaded dataset. This requires the caption_filename_tuple to have
             been generated and pickled using utils.organise_data(). 
@@ -160,9 +163,9 @@ class InstgramCaptioner:
         result, _ = self.generate_caption(current_img_path)
         gen_caption = ' '.join(result[:-1])
 
-        print(f'The caption PREDICTED by caption_bot'.center(80, '*'))
+        print(f' The caption PREDICTED by caption_bot '.center(80, '*'))
         print(gen_caption)
-        print(f'The original ground truth caption'.center(80, '*'))
+        print(f' The LABELLED ground truth caption '.center(80, '*'))
         print(ground_truth_caption)
 
         # cv2 operations to annotate the image with predicted and ground-truth captions
