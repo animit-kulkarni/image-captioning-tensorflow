@@ -1,5 +1,5 @@
-#from tensorflow import python as tf
-import tensorflow as tf
+from tensorflow import python as tf
+#import tensorflow as tf
 
 class BahdanauAttention(tf.keras.Model):
   def __init__(self, units):

@@ -75,7 +75,6 @@ def train_step(img_tensor, target, tokenizer, loss_object):
 if __name__ == '__main__':
 
     model_id = datetime.now().strftime("%d%m%Y-%H%M%S")
-    model_id = 'test'
 
     caption_filename_tuple_path = os.path.join(CONFIG.CACHE_DIR_ROOT, 'mobilenet_v2_captions', 'caption_filename_tuple.pkl')
         
@@ -158,9 +157,8 @@ if __name__ == '__main__':
             
             with train_summary_writer.as_default():
                 tf.summary.scalar('loss', batch_loss, step=step)
+                tf.summary.scalar('learning_rate', CONFIG.LEARNING_RATE, step=step)
 
-            if batch == 3:
-                break
         # storing the epoch end loss value to plot later
         loss_plot.append(total_loss / num_steps)
 
