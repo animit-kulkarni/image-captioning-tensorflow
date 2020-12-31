@@ -36,7 +36,7 @@ class CNN_Encoder(tf.keras.Model):
     # This encoder passes those features through a Fully connected layer
     def __init__(self, embedding_dim):
         super(CNN_Encoder, self).__init__()
-        # shape after fc == (batch_size, 64, embedding_dim)
+        # shape after fc == (batch_size, 49, embedding_dim=256)
         self.fc = tf.keras.layers.Dense(embedding_dim)
 
     def call(self, x):
@@ -48,7 +48,7 @@ class CNN_Encoder(tf.keras.Model):
 class RNN_Decoder(tf.keras.Model):
   def __init__(self, embedding_dim, units, vocab_size):
     super(RNN_Decoder, self).__init__()
-    self.units = units
+    self.units = units #512
 
     self.embedding = tf.keras.layers.Embedding(vocab_size, embedding_dim)
     self.gru = tf.keras.layers.GRU(self.units,

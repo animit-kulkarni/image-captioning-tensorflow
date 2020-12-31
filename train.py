@@ -5,6 +5,7 @@ import os
 import time
 from datetime import datetime
 import logging
+import cv2
 
 from config import CONFIG
 import utils
@@ -28,34 +29,53 @@ logger.info('Logging has begun!')
 
 @tf.function
 def train_step(img_tensor, target, tokenizer, loss_object):
-  loss = 0
+    """Training step as tf.function to allow for gradient updates in tensorflow.
 
-  # initializing the hidden state for each batch
-  # because the captions are not related from image to image
-  hidden = decoder.reset_state(batch_size=target.shape[0])
-  dec_input = tf.expand_dims([tokenizer.word_index['<start>']] * target.shape[0], 1)
+    Args:
+        img_tensor -- this is output of CNN
+        target -- caption vectors of dim (units, max_length) where units is num GRUs and max_length is size of caption with most tokens
+    """
+    loss = 0
 
-  with tf.GradientTape() as tape:
-      features = encoder(img_tensor)
+    # initializing the hidden state for each batch
+    # because the captions are not related from image to image
+    hidden = decoder.reset_state(batch_size=target.shape[0])
+    dec_input = tf.expand_dims([tokenizer.word_index['<start>']] * target.shape[0], 1)
 
-      for i in range(1, target.shape[1]):
-          # passing the features through the decoder
-          predictions, hidden, _ = decoder(dec_input, features, hidden)
-          loss += loss_function(target[:, i], predictions, loss_object)
-          # using teacher forcing
-          dec_input = tf.expand_dims(target[:, i], 1)
+    with tf.GradientTape() as tape:
+         # img_tensor.shape = [512, 49, 1280] (batch_size, feature_map_size)
+         # features.shape = [512, 49, 256] (batch_size, fc_layer_output)
+        features = encoder(img_tensor)
 
-  total_loss = (loss / int(target.shape[1]))
-  trainable_variables = encoder.trainable_variables + decoder.trainable_variables
-  gradients = tape.gradient(loss, trainable_variables)
-  optimizer.apply_gradients(zip(gradients, trainable_variables))
+        # Iterate over the sequence (each caption was tokenized and padded up to 49 tokens. These 'numbers' are embedded as  )        
+        for i in range(1, target.shape[1]):
+            # passing the features through the decoder
+            # predictions.shape = [512, 5001] (batch_size, vocab_size)
+            # hidden.shape = [512, 512] (batch_size, units)
+            # dec_input.shape = [512, 1] (batch_size, 1)
+            # features.shape = [512, 49, 256] (batch_size, embedded_cnn_output_shape)
 
-  return loss, total_loss
+            predictions, hidden, _ = decoder(dec_input, features, hidden)
+            loss += loss_function(target[:, i], predictions, loss_object)
+            
+            # using teacher forcing. See 'https://machinelearningmastery.com/teacher-forcing-for-recurrent-neural-networks/' 
+            # for more information - it's a simple concept
+            # expand dims is like unsqueeze in pytorch.
+
+            dec_input = tf.expand_dims(target[:, i], 1) # take the ith word in target not pred i.e. teacher forcing method
+
+    total_loss = (loss / int(target.shape[1]))
+    trainable_variables = encoder.trainable_variables + decoder.trainable_variables
+    gradients = tape.gradient(loss, trainable_variables)
+    optimizer.apply_gradients(zip(gradients, trainable_variables))
+
+    return loss, total_loss
 
 
 if __name__ == '__main__':
 
     model_id = datetime.now().strftime("%d%m%Y-%H%M%S")
+    model_id = 'test'
 
     caption_filename_tuple_path = os.path.join(CONFIG.CACHE_DIR_ROOT, 'mobilenet_v2_captions', 'caption_filename_tuple.pkl')
         
@@ -81,9 +101,10 @@ if __name__ == '__main__':
     dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
 
     # Model
+    
     encoder = CNN_Encoder(CONFIG.EMBEDDING_SIZE)
     decoder = RNN_Decoder(CONFIG.EMBEDDING_SIZE, CONFIG.UNITS, CONFIG.VOCAB_SIZE)
-
+    
     # Optimizer
     optimizer = tf.keras.optimizers.Adam(learning_rate=CONFIG.LEARNING_RATE,
                                          beta_1=0.9,
@@ -137,7 +158,9 @@ if __name__ == '__main__':
             
             with train_summary_writer.as_default():
                 tf.summary.scalar('loss', batch_loss, step=step)
-        
+
+            if batch == 3:
+                break
         # storing the epoch end loss value to plot later
         loss_plot.append(total_loss / num_steps)
 
@@ -150,14 +173,14 @@ if __name__ == '__main__':
 
     logger.info(' **** Saving final model weights ****')
 
-    encoder.save_weights(os.path.join(checkpoint_path, 'encoder_weights.tf'))
-    logger.info(f'      Encoder weights saved to {checkpoint_path}')
-    decoder.save_weights(os.path.join(checkpoint_path, 'decoder_weights.tf'))
-    logger.info(f'      Decoder weights saved to {checkpoint_path}')
-
-    # encoder.save(os.path.join(checkpoint_path, 'encoder.tf'))
+    # encoder.save_weights(os.path.join(checkpoint_path, 'encoder_weights.tf'))
     # logger.info(f'      Encoder weights saved to {checkpoint_path}')
-    # decoder.save(os.path.join(checkpoint_path, 'decoder.tf'))
+    # decoder.save_weights(os.path.join(checkpoint_path, 'decoder_weights.tf'))
+    # logger.info(f'      Decoder weights saved to {checkpoint_path}')
+
+    # encoder.save(os.path.join(checkpoint_path, 'encoder'))
+    # logger.info(f'      Encoder weights saved to {checkpoint_path}')
+    # decoder.save(os.path.join(checkpoint_path, 'decoder'))
     # logger.info(f'      Decoder weights saved to {checkpoint_path}')
 
 
@@ -172,7 +195,11 @@ if __name__ == '__main__':
 
     result, attention_plot = caption_bot.generate_caption(image_path)
 
+    caption_bot = InstgramCaptioner(checkpoint_path, tokenizer_path, CONFIG, encoder = encoder, decoder = decoder)
+    result2, _ = caption_bot.generate_caption(image_path)
+
     print(result)
+    print(result2)
 
 
 
