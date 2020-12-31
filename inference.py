@@ -11,14 +11,14 @@ from prepare_img_features import load_image
 
 class InstgramCaptioner:
 
-    def __init__(self, checkpoint_path, tokenizer_path, CONFIG, enoder=None, decoder=None):
+    def __init__(self, checkpoint_path, tokenizer_path, CONFIG, encoder=None, decoder=None):
 
         self.mobilenet_v2 = tf.keras.applications.MobileNetV2
         self.cnn_feature_model = self._reconfigure_cnn()
-        model_weights_root = '/mnt/pythonfiles/models/mobilenet_v2_bahdanau/checkpoints/train/30122020-183928'
+        model_weights_root = '/mnt/pythonfiles/models/mobilenet_v2_bahdanau/checkpoints/train/30122020-230207'
 
         if encoder is not None:
-            self.encoder = None
+            self.encoder = encoder
         else:
             self.encoder = CNN_Encoder(CONFIG.EMBEDDING_SIZE)
             self.encoder.load_weights(os.path.join(model_weights_root, 'encoder_weights.tf'))
