@@ -64,13 +64,10 @@ class InstgramCaptioner:
 
         result = []
         for _ in range(max_length):
-            predictions, hidden, attention_weights = self.decoder(decoder_input, features, hidden)
-
-            predicted_id = np.argmax(predictions) 
-            
             # we could use the code below instead to generate randomness in sentence creation - useful for production
             # but not the testing here: tf.random.categorical(predictions, 1, seed=42)[0][0].numpy()
-            
+            predictions, hidden, attention_weights = self.decoder(decoder_input, features, hidden)
+            predicted_id = np.argmax(predictions) 
             result.append(self.tokens_manager.tokenizer.index_word[predicted_id])
 
             if self.tokens_manager.tokenizer.index_word[predicted_id] == '<end>':
