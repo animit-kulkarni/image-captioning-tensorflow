@@ -26,24 +26,32 @@ Note on dependencies:
 
 ## Setup and Usage
 `pip install virtualenv'
+
 `virtualenv -p [path-to-python] venv`
+
 `source venv/bin/activate`
+
 `pip install -r requirements.txt`
 
 1. Clone the repository
+
 `git clone https://github.com/animit-kulkarni/InstagramCaptioner.git`
 
 2. Configure congig.py paths
 
 3. Download data
+
 `python data_management/download_data.py`
 
 2. Prepapre image features
+
 `python prepare_img_features.py`
 
 3. Train model
+
 `python train.py`
 
 4. Inference
+
 `python inference.py [int]`
 
