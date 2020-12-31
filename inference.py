@@ -3,11 +3,14 @@ import numpy as np
 import os
 import pickle
 import cv2
+import sys
 
 from config import CONFIG
 from model import CNN_Encoder, RNN_Decoder
 import utils
 from prepare_img_features import load_image
+
+
 
 class InstgramCaptioner:
 
@@ -15,49 +18,42 @@ class InstgramCaptioner:
 
         self.mobilenet_v2 = tf.keras.applications.MobileNetV2
         self.cnn_feature_model = self._reconfigure_cnn()
-        model_weights_root = '/mnt/pythonfiles/models/mobilenet_v2_bahdanau/checkpoints/train/30122020-230207'
 
         if encoder is not None:
             self.encoder = encoder
         else:
             self.encoder = CNN_Encoder(CONFIG.EMBEDDING_SIZE)
-            self.encoder.load_weights(os.path.join(model_weights_root, 'encoder_weights.tf'))
 
         if decoder is not None:
             self.decoder = decoder
         
         else:
             self.decoder = RNN_Decoder(CONFIG.EMBEDDING_SIZE, CONFIG.UNITS, CONFIG.VOCAB_SIZE)
-            self.decoder.load_weights(os.path.join(model_weights_root, 'decoder_weights.tf'))
 
+        ckpt = tf.train.Checkpoint(encoder=self.encoder,
+                                   decoder=self.decoder)
 
-        optimizer = optimizer = tf.keras.optimizers.Adam(learning_rate=CONFIG.LEARNING_RATE,
-                                                         beta_1=0.9,
-                                                         beta_2=0.999,
-                                                         epsilon=1e-7,)
+        ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_path, max_to_keep=5)
+        ckpt.restore(ckpt_manager.latest_checkpoint)
 
-        # ckpt = tf.train.Checkpoint(encoder=self.encoder,
-        #                            decoder=self.decoder,
-        #                            optimizer=optimizer)
-
-        # ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_path, max_to_keep=5)
-        # ckpt.restore(ckpt_manager.latest_checkpoint)
-
-        # if ckpt_manager.latest_checkpoint:
-        #     print("Restored from {}".format(ckpt_manager.latest_checkpoint))
-        # else:
-        #     print("Initializing from scratch.")
+        if ckpt_manager.latest_checkpoint:
+            print("**************** Restored from {}".format(ckpt_manager.latest_checkpoint))
+        else:
+            print("**************** Initializing from scratch.")
 
         self.tokens_manager = pickle.load(open(tokenizer_path, 'rb'))
 
     def generate_caption(self, image_path):
 
+        # max_length = 47 on this dataset
         max_length = self.tokens_manager.max_length
         print('MAX LENGTH: ', max_length) 
         
         attention_plot = np.zeros((max_length, 49))
+        # hidden.shape = [1, 512]
+        # features,shape = [1, 49, 256]
+        # decoder_input.shape = [1, 1]
         hidden = self.decoder.reset_state(batch_size=1)
-
         features = self._create_img_encoding(image_path)
         decoder_input = tf.expand_dims([self.tokens_manager.tokenizer.word_index['<start>']], 0)
 
@@ -65,9 +61,7 @@ class InstgramCaptioner:
         for i in range(max_length):
             predictions, hidden, attention_weights = self.decoder(decoder_input, features, hidden)
 
-            attention_plot[i] = tf.reshape(attention_weights, (-1, )).numpy()
-
-            predicted_id = tf.random.categorical(predictions, 1)[0][0].numpy()
+            predicted_id = np.argmax(predictions) #tf.random.categorical(predictions, 1, seed=42)[0][0].numpy()
             result.append(self.tokens_manager.tokenizer.index_word[predicted_id])
 
             if self.tokens_manager.tokenizer.index_word[predicted_id] == '<end>':
@@ -109,15 +103,24 @@ class InstgramCaptioner:
 if __name__ == '__main__':
 
     tokenizer_path = os.path.join(CONFIG.CACHE_DIR_ROOT, 'mobilenet_v2_captions', 'coco_tokenizer.pkl') 
-    checkpoint_path = '/mnt/pythonfiles/models/mobilenet_v2_bahdanau/checkpoints/train/29122020-113613'
-    image_path = os.path.join(CONFIG.IMAGES_DIR, os.listdir(CONFIG.IMAGES_DIR)[0])
+    checkpoint_path = '/mnt/pythonfiles/models/mobilenet_v2_bahdanau/checkpoints/train/28122020-130703'
+
+    id_ = int(sys.argv[1])
+
+
+    image_path = os.path.join(CONFIG.IMAGES_DIR, os.listdir(CONFIG.IMAGES_DIR)[id_])
 
     current_img = cv2.imread(image_path)
-    cv2.imwrite('current_img.png', current_img)
 
     caption_bot = InstgramCaptioner(checkpoint_path, tokenizer_path, CONFIG)
-
     result, attention_plot = caption_bot.generate_caption(image_path)
+
+    gen_caption = ' '.join(result)
+
+    cv2.putText(current_img, gen_caption, (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1,  (0, 0, 255), 2, cv2.LINE_AA)
+
+    cv2.imwrite('current_img.png', current_img)
+
 
     print(result)
 

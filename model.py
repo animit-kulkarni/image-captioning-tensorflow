@@ -1,4 +1,5 @@
-from tensorflow import python as tf
+#from tensorflow import python as tf
+import tensorflow as tf
 
 class BahdanauAttention(tf.keras.Model):
   def __init__(self, units):
@@ -61,13 +62,18 @@ class RNN_Decoder(tf.keras.Model):
     self.attention = BahdanauAttention(self.units)
 
   def call(self, x, features, hidden):
+
+    # x.shape = [1, 1]
+    # features.shape = [batch_size, 49, 256]
+    # hidden.shape = [batch_size, 512]
+
     # defining attention as a separate model
     context_vector, attention_weights = self.attention(features, hidden)
 
-    # x shape after passing through embedding == (batch_size, 1, embedding_dim)
+    # x shape after passing through embedding == (batch_size, 1, embedding_dim=512)
     x = self.embedding(x)
 
-    # x shape after concatenation == (batch_size, 1, embedding_dim + hidden_size)
+    # x shape after concatenation == (batch_size, 1, embedding_dim=512 + hidden_size=512)
     x = tf.concat([tf.expand_dims(context_vector, 1), x], axis=-1)
 
     # passing the concatenated vector to the GRU
