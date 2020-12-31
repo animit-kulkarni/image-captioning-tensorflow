@@ -13,6 +13,6 @@ class CONFIG:
         EMBEDDING_SIZE = 256
         UNITS = 512
         VOCAB_SIZE = VOCABULARY_TOP_K + 1
-        EPOCHS = 1
+        EPOCHS = 2
         LEARNING_RATE = 0.005
 
