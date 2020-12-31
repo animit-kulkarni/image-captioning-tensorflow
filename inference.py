@@ -61,7 +61,12 @@ class InstgramCaptioner:
         for i in range(max_length):
             predictions, hidden, attention_weights = self.decoder(decoder_input, features, hidden)
 
-            predicted_id = np.argmax(predictions) #tf.random.categorical(predictions, 1, seed=42)[0][0].numpy()
+            predicted_id = np.argmax(predictions) 
+            
+            # we could use the code below instead to generate randomness in sentence creation - useful for production
+            # but not the testing here
+            #tf.random.categorical(predictions, 1, seed=42)[0][0].numpy()
+            
             result.append(self.tokens_manager.tokenizer.index_word[predicted_id])
 
             if self.tokens_manager.tokenizer.index_word[predicted_id] == '<end>':
@@ -100,29 +105,51 @@ class InstgramCaptioner:
         img = tf.keras.applications.imagenet_utils.preprocess_input(img)
         return img
 
+    def plot_img(self, idx, caption_filename_tuple_path, output_file='current_img.png'):
+
+        caption_filename_tuple = pickle.load(open(caption_filename_tuple_path, 'rb'))
+        
+        ground_truth_caption = ' '.join(caption_filename_tuple[idx][0].split(' ')[1:-1])
+
+        current_img_path = caption_filename_tuple[idx][1]
+        current_img = cv2.imread(current_img_path)
+
+
+        result, _ = self.generate_caption(current_img_path)
+        gen_caption = ' '.join(result[:-1])
+
+        print(gen_caption)
+        print(ground_truth_caption)
+
+        cv2.rectangle(current_img, (15, 25), (current_img.shape[1] - 15, 85), (95, 95, 95), cv2.FILLED)
+        cv2.putText(current_img, gen_caption, (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.5,  (60, 30, 255), 1, cv2.LINE_AA)
+        cv2.putText(current_img, ground_truth_caption, (50, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.5,  (20, 240, 10), 1, cv2.LINE_AA)
+
+        cv2.imwrite(output_file, current_img)
+
+
+
+
 if __name__ == '__main__':
 
     tokenizer_path = os.path.join(CONFIG.CACHE_DIR_ROOT, 'mobilenet_v2_captions', 'coco_tokenizer.pkl') 
-    checkpoint_path = '/mnt/pythonfiles/models/mobilenet_v2_bahdanau/checkpoints/train/28122020-130703'
-
-    id_ = int(sys.argv[1])
+    checkpoint_path = '/mnt/pythonfiles/models/mobilenet_v2_bahdanau/checkpoints/train/31122020-180918'
 
 
-    image_path = os.path.join(CONFIG.IMAGES_DIR, os.listdir(CONFIG.IMAGES_DIR)[id_])
+    # image_path = os.path.join(CONFIG.IMAGES_DIR, os.listdir(CONFIG.IMAGES_DIR)[id_])
 
-    current_img = cv2.imread(image_path)
+    # current_img = cv2.imread(image_path)
 
     caption_bot = InstgramCaptioner(checkpoint_path, tokenizer_path, CONFIG)
-    result, attention_plot = caption_bot.generate_caption(image_path)
-
-    gen_caption = ' '.join(result)
-
-    cv2.putText(current_img, gen_caption, (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1,  (0, 0, 255), 2, cv2.LINE_AA)
-
-    cv2.imwrite('current_img.png', current_img)
+    # result, attention_plot = caption_bot.generate_caption(image_path)
+    caption_filename_tuple_path = os.path.join(CONFIG.CACHE_DIR_ROOT, 'mobilenet_v2_captions', 'caption_filename_tuple.pkl')
 
 
-    print(result)
+    idx = int(sys.argv[1])
+
+    caption_bot.plot_img(idx, caption_filename_tuple_path)
+
+
 
 
 
