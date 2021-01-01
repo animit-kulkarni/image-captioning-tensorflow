@@ -74,41 +74,53 @@ def train_step(img_tensor, target, tokenizer, loss_object):
 
 if __name__ == '__main__':
 
-    model_id = datetime.now().strftime("%d%m%Y-%H%M%S")
+    #TODO: I think a TrainingManager class could be made where all this model_id, path creation etc is made and reduces the 
+    # clunkiness of the training code.
+    if CONFIG.INCLUDE_CNN_IN_TRAINING:
+        model_id = datetime.now().strftime("%d%m%Y-%H%M%S") + '_CNN'
+    else:
+        model_id = datetime.now().strftime("%d%m%Y-%H%M%S")
 
     caption_filename_tuple_path = os.path.join(CONFIG.CACHE_DIR_ROOT, 'mobilenet_v2_captions', 'caption_filename_tuple.pkl')
         
     logger.info('Preparing tokens')
     tokens_manager = TokensManager()
     train_captions, val_captions = tokens_manager.prepare_imgs_tokens(caption_filename_tuple_path)
-    tokens_manager.save_caption_file_tuples(train_captions, val_captions)
+    tokens_manager.save_caption_file_tuples(train_captions, val_captions) # this isn't necessary for training but useful for analytical work
     tokenizer_save_path = os.path.join(CONFIG.CACHE_DIR_ROOT, 'mobilenet_v2_captions', 'coco_tokenizer.pkl') 
-    pickle.dump(tokens_manager, open(tokenizer_save_path, 'wb'))
+    pickle.dump(tokens_manager, open(tokenizer_save_path, 'wb')) # save the tokenizer for inference
 
+    # separate the filenames and captions to get correct format for dataset work
     img_name_train = [i[0] for i in train_captions]
     cap_train = [i[1] for i in train_captions]
-
     dataset = tf.data.Dataset.from_tensor_slices((img_name_train, cap_train))
 
+    if CONFIG.INCLUDE_CNN_IN_TRAINING:
+        loading_data_fn = utils.map_func_including_cnn
+    else:
+        loading_data_fn = utils.map_func
+
     # Use map to load the numpy files in parallel
-    dataset = dataset.map(lambda item1, item2: tf.numpy_function(
-        utils.map_func, [item1, item2], [tf.float32, tf.int32]),
-        num_parallel_calls=tf.data.experimental.AUTOTUNE)
+    dataset = dataset.map(lambda item1, item2: tf.numpy_function(loading_data_fn,
+                                                                 [item1, item2],
+                                                                 [tf.float32, tf.int32]),
+                          num_parallel_calls=tf.data.experimental.AUTOTUNE)
 
     # Shuffle and batch
     dataset = dataset.shuffle(CONFIG.BUFFER_SIZE).batch(CONFIG.BATCH_SIZE)
     dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
 
     # Model
-    
-    encoder = CNN_Encoder(CONFIG.EMBEDDING_SIZE)
+    # mirrored_strategy = tf.distribute.MirroredStrategy()
+    # with mirrored_strategy.scope():
+    encoder = CNN_Encoder(CONFIG.EMBEDDING_SIZE, include_cnn_backbone=CONFIG.INCLUDE_CNN_IN_TRAINING)
     decoder = RNN_Decoder(CONFIG.EMBEDDING_SIZE, CONFIG.UNITS, CONFIG.VOCAB_SIZE)
     
     # Optimizer
     optimizer = tf.keras.optimizers.Adam(learning_rate=CONFIG.LEARNING_RATE,
                                          beta_1=0.9,
                                          beta_2=0.999,
-                                         epsilon=1e-7,)
+                                         epsilon=1e-7)
 
     loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True, reduction='none')
 
@@ -182,22 +194,22 @@ if __name__ == '__main__':
     # logger.info(f'      Decoder weights saved to {checkpoint_path}')
 
 
-    tokenizer_path = os.path.join(CONFIG.CACHE_DIR_ROOT, 'mobilenet_v2_captions', 'coco_tokenizer.pkl') 
-    checkpoint_path = '/mnt/pythonfiles/models/mobilenet_v2_bahdanau/checkpoints/train/29122020-113613'
-    image_path = os.path.join(CONFIG.IMAGES_DIR, os.listdir(CONFIG.IMAGES_DIR)[0])
+    # tokenizer_path = os.path.join(CONFIG.CACHE_DIR_ROOT, 'mobilenet_v2_captions', 'coco_tokenizer.pkl') 
+    # checkpoint_path = '/mnt/pythonfiles/models/mobilenet_v2_bahdanau/checkpoints/train/29122020-113613'
+    # image_path = os.path.join(CONFIG.IMAGES_DIR, os.listdir(CONFIG.IMAGES_DIR)[0])
 
-    current_img = cv2.imread(image_path)
-    cv2.imwrite('current_img.png', current_img)
+    # current_img = cv2.imread(image_path)
+    # cv2.imwrite('current_img.png', current_img)
 
-    caption_bot = InstgramCaptioner(checkpoint_path, tokenizer_path, CONFIG, encoder = encoder, decoder = decoder)
+    # caption_bot = InstgramCaptioner(checkpoint_path, tokenizer_path, CONFIG, encoder = encoder, decoder = decoder)
 
-    result, attention_plot = caption_bot.generate_caption(image_path)
+    # result, attention_plot = caption_bot.generate_caption(image_path)
 
-    caption_bot = InstgramCaptioner(checkpoint_path, tokenizer_path, CONFIG, encoder = encoder, decoder = decoder)
-    result2, _ = caption_bot.generate_caption(image_path)
+    # caption_bot = InstgramCaptioner(checkpoint_path, tokenizer_path, CONFIG, encoder = encoder, decoder = decoder)
+    # result2, _ = caption_bot.generate_caption(image_path)
 
-    print(result)
-    print(result2)
+    # print(result)
+    # print(result2)
 
 
 

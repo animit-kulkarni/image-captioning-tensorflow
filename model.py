@@ -1,5 +1,5 @@
-from tensorflow import python as tf
-#import tensorflow as tf
+#from tensorflow import python as tf
+import tensorflow as tf
 
 class BahdanauAttention(tf.keras.Model):
   def __init__(self, units):
@@ -35,15 +35,32 @@ class BahdanauAttention(tf.keras.Model):
 class CNN_Encoder(tf.keras.Model):
     # Since you have already extracted the features and dumped it using pickle
     # This encoder passes those features through a Fully connected layer
-    def __init__(self, embedding_dim):
+    def __init__(self, embedding_dim, include_cnn_backbone=False):
         super(CNN_Encoder, self).__init__()
         # shape after fc == (batch_size, 49, embedding_dim=256)
+        self.include_cnn_backbone = include_cnn_backbone
+        if self.include_cnn_backbone:
+          self.cnn = tf.keras.applications.MobileNetV2
+          self.cnn_backbone = self._reconfigure_cnn()
+        
         self.fc = tf.keras.layers.Dense(embedding_dim)
 
     def call(self, x):
+        if self.include_cnn_backbone:
+          assert True, "Place holder to check input dims for image size"
+          x = self.cnn_backbone(x)
+          x = tf.reshape(x, (x.shape[0], -1, x.shape[3]))
+          
         x = self.fc(x)
         x = tf.nn.relu(x)
         return x
+
+    def _reconfigure_cnn(self):
+        model = self.cnn(include_top=False, weights='imagenet')
+        new_input = model.input
+        remaining_desired_architecture = model.layers[-1].output
+        reconfigured_cnn = tf.keras.Model(new_input, remaining_desired_architecture)
+        return reconfigured_cnn
 
 
 class RNN_Decoder(tf.keras.Model):

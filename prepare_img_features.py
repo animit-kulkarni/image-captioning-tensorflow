@@ -17,7 +17,8 @@ from config import CONFIG
 from tools.timer import timer
 import utils
 from tqdm import tqdm
-
+seed = 42
+np.random.seed(seed) 
 
 model_config_dict = {'mobilenet_v2': {'model': tf.keras.applications.MobileNetV2,
                                       'features_shape': 1280,
@@ -76,8 +77,8 @@ def load_image(image_path):
 
 if __name__ == '__main__':
 
-    captions_dir = os.path.join(CONFIG.CACHE_DIR_ROOT, 'mobilenet_v2_captions')
-    features_dir = os.path.join(CONFIG.CACHE_DIR_ROOT, 'mobilenet_v2_features')
+    captions_dir = os.path.join(CONFIG.CACHE_DIR_ROOT, f'{CONFIG.CNN_BACKBONE}_captions')
+    features_dir = os.path.join(CONFIG.CACHE_DIR_ROOT, f'{CONFIG.CNN_BACKBONE}_features')
 
     if not os.path.exists(captions_dir):
         os.mkdir(captions_dir)
@@ -94,4 +95,4 @@ if __name__ == '__main__':
     # FEATURES
     preprocess_img_and_cache(img_name_vector,
                              features_dir,
-                             model_config_dict['mobilenet_v2'])
+                             model_config_dict[CONFIG.CNN_BACKBONE])

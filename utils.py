@@ -2,8 +2,10 @@ import numpy as np
 import os
 import json
 import collections
+import cv2
 
 from config import CONFIG
+from prepare_img_features import load_image
 
 
 seed = 42
@@ -52,8 +54,18 @@ def calc_max_length(tensor):
     # Load the numpy files
 def map_func(img_name, caption):
     img_name_file_only = img_name.decode('utf-8').split('/')[-1]
-    cahced_features_to_load = os.path.join(CONFIG.CACHE_DIR_ROOT, 'mobilenet_v2_features', img_name_file_only + '.npy')
-    img_tensor = np.load(cahced_features_to_load)
+    cached_features_to_load = os.path.join(CONFIG.CACHE_DIR_ROOT, 'mobilenet_v2_features', img_name_file_only + '.npy')
+    img_tensor = np.load(cached_features_to_load)
     return img_tensor, caption
+
+def map_func_including_cnn(img_name, caption):
+    img_name_file_only = img_name.decode('utf-8').split('/')[-1]
+    path_to_file = os.path.join(CONFIG.IMAGES_DIR, img_name_file_only)
+    img_tensor, _ = load_image(path_to_file)
+
+
+    return img_tensor, caption
+
+
 
   

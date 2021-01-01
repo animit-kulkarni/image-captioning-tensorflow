@@ -8,14 +8,16 @@ class CONFIG:
 
         # Prepare image features parameters
         NUMBER_OF_IMAGES = 6000
+        CNN_BACKBONE = 'mobilenet_v2'
+        INCLUDE_CNN_IN_TRAINING = True
 
         # Training parameters
         VOCABULARY_TOP_K = 5000
-        BATCH_SIZE = 512
+        BATCH_SIZE = 8
         BUFFER_SIZE = 1000
         EMBEDDING_SIZE = 256
         UNITS = 512
         VOCAB_SIZE = VOCABULARY_TOP_K + 1
-        EPOCHS = 50
-        LEARNING_RATE = 0.003
+        EPOCHS = 1
+        LEARNING_RATE = 0.0001
 
