@@ -4,7 +4,7 @@ class CONFIG:
         IMAGES_DIR = '/mnt/pythonfiles/training-sets/raw/MSCOCO/train2014'
         CACHE_DIR_ROOT = '/mnt/pythonfiles/training-sets/interim'
         CHECKPOINT_PATH = '/mnt/pythonfiles/models/mobilenet_v2_bahdanau'
-        LOGS_DIR = '.logs/gradient_tape'
+        LOGS_DIR = '../.logs/gradient_tape'
 
         # Prepare image features parameters
         NUMBER_OF_IMAGES = 6000
