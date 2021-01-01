@@ -32,7 +32,8 @@ virtualenv -p [path-to-python] venv
 
 source venv/bin/activate
 
-pip install -r requirements.txt~~~
+pip install -r requirements.txt
+~~~
 
 1. Clone the repository
 
