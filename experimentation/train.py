@@ -15,6 +15,7 @@ from model import CNN_Encoder, RNN_Decoder
 from loss import loss_function
 from prepare_img_features import model_config_dict
 from tokenize_captions import TokensManager
+import evaluate
 
 seed = 42
 np.random.seed(seed)
@@ -45,7 +46,7 @@ def train_step(img_tensor, target, tokenizer, loss_object):
          # features.shape = [512, 49, 256] (batch_size, fc_layer_output)
         features = encoder(img_tensor)
 
-        # Iterate over the sequence (each caption was tokenized and padded up to 49 tokens. These 'numbers' are embedded as  )        
+        # Iterate over the sequence (each caption was tokenized and padded up to 47 tokens (max_length). These 'numbers' are embedded as tokens.    
         for i in range(1, target.shape[1]):
             # passing the features through the decoder
             # predictions.shape = [512, 5001] (batch_size, vocab_size)
@@ -89,9 +90,9 @@ if __name__ == '__main__':
     pickle.dump(tokens_manager, open(tokenizer_save_path, 'wb')) # save the tokenizer for inference
 
     # separate the filenames and captions to get correct format for dataset work
-    img_name_train = [i[0] for i in train_captions]
-    cap_train = [i[1] for i in train_captions]
-    dataset = tf.data.Dataset.from_tensor_slices((img_name_train, cap_train))
+
+    train_dataset = tf.data.Dataset.from_tensor_slices(([t[0] for t in train_captions], [t[1] for t in train_captions]))
+    val_dataset = tf.data.Dataset.from_tensor_slices(([v[0] for v in val_captions], [v[1] for v in val_captions]))
 
     if CONFIG.INCLUDE_CNN_IN_TRAINING:
         loading_data_fn = utils.map_func_including_cnn
@@ -99,14 +100,23 @@ if __name__ == '__main__':
         loading_data_fn = utils.map_func
 
     # Use map to load the numpy files in parallel
-    dataset = dataset.map(lambda item1, item2: tf.numpy_function(loading_data_fn,
-                                                                 [item1, item2],
+    train_dataset = train_dataset.map(lambda file, cap: tf.numpy_function(loading_data_fn,
+                                                                 [file, cap],
+                                                                 [tf.float32, tf.int32]),
+                          num_parallel_calls=tf.data.experimental.AUTOTUNE)
+
+    val_dataset = val_dataset.map(lambda file, cap: tf.numpy_function(loading_data_fn,
+                                                                 [file, cap],
                                                                  [tf.float32, tf.int32]),
                           num_parallel_calls=tf.data.experimental.AUTOTUNE)
 
     # Shuffle and batch
-    dataset = dataset.shuffle(CONFIG.BUFFER_SIZE).batch(CONFIG.BATCH_SIZE)
-    dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
+    train_dataset = train_dataset.shuffle(CONFIG.BUFFER_SIZE).batch(CONFIG.BATCH_SIZE)
+    train_dataset = train_dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
+
+    val_dataset = val_dataset.shuffle(CONFIG.BUFFER_SIZE).batch(CONFIG.EVAL_BATCH_SIZE)
+    val_dataset = val_dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
+
 
     # Model
     # mirrored_strategy = tf.distribute.MirroredStrategy()
@@ -152,12 +162,13 @@ if __name__ == '__main__':
     logger.info('       *********** BEGIN TRAINING LOOP ***********')
     loss_plot = []
     step = 0
-    num_steps = len(img_name_train)//CONFIG.BATCH_SIZE
+    num_steps = len(train_captions)//CONFIG.BATCH_SIZE
     for epoch in range(start_epoch, CONFIG.EPOCHS):
         start = time.time()
         total_loss = 0
 
-        for (batch, (img_tensor, target)) in enumerate(dataset):
+        for (batch, (img_tensor, target)) in enumerate(train_dataset):
+
             batch_loss, t_loss = train_step(img_tensor, target, tokens_manager.tokenizer, loss_object)
             step += 1
             total_loss += t_loss
@@ -169,6 +180,17 @@ if __name__ == '__main__':
                 tf.summary.scalar('loss', batch_loss, step=step)
                 tf.summary.scalar('learning_rate', CONFIG.LEARNING_RATE, step=step)
 
+            # if batch % 20 == 0:
+            #     print('EVALUATING')
+            #     total_bleu_score = 0
+            #     for (batch, (img_tensor, target)) in enumerate(val_dataset):
+            #         batch_bleu_score = eval_step(img_tensor, target, tokens_manager.tokenizer, CONFIG.EVAL_BATCH_SIZE)
+            #         total_bleu_score += batch_bleu_score
+            #     average_bleu_score = total_bleu_score/((len(val_captions)// CONFIG.EVAL_BATCH_SIZE))
+
+            #     with train_summary_writer.as_default():
+            #         tf.summary.scalar('average_bleu_score', average_bleu_score, step=step)
+            
         # storing the epoch end loss value to plot later
         loss_plot.append(total_loss / num_steps)
 

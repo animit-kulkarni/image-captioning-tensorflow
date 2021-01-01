@@ -21,3 +21,6 @@ class CONFIG:
         EPOCHS = 1
         LEARNING_RATE = 0.0001
 
+        # Evaluation parameters
+        EVAL_BATCH_SIZE = 8
+
