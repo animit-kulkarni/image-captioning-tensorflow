@@ -8,15 +8,13 @@ import logging
 import cv2
 
 from config import CONFIG
-import utils
 from tools.logging_helper import LOGGING_CONFIG
 from tools.timer import timer
+import utils
 from model import CNN_Encoder, RNN_Decoder
 from loss import loss_function
 from prepare_img_features import model_config_dict
 from tokenize_captions import TokensManager
-from inference import InstgramCaptioner
-
 
 seed = 42
 np.random.seed(seed)

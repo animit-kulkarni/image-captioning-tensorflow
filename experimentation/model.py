@@ -1,4 +1,7 @@
-#from tensorflow import python as tf
+#from tensorflow import python as tf 
+# if the model has been trained with python fork then inference needs python fork otherwise 
+# you get the following error:
+# ValueError: Tensor's shape (1536,) is not compatible with supplied shape (2, 1536)
 import tensorflow as tf
 
 class BahdanauAttention(tf.keras.Model):

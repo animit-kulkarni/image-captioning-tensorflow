@@ -3,13 +3,19 @@ import numpy as np
 import os
 import pickle
 import cv2
+import logging
 import sys
 
 from config import CONFIG
 from model import CNN_Encoder, RNN_Decoder
-import utils
+import utils as utils
 from prepare_img_features import load_image
 from tools.timer import timer
+from tools.logging_helper import LOGGING_CONFIG
+
+logging.basicConfig(**LOGGING_CONFIG.print_kwargs)
+logger = logging.getLogger(__name__)
+logger.info('Logging has begun!')
 
 class InstgramCaptioner:
 
@@ -163,10 +169,10 @@ class InstgramCaptioner:
         result, _ = self.generate_caption(current_img_path)
         gen_caption = ' '.join(result[:-1])
 
-        print(f' The caption PREDICTED by caption_bot '.center(80, '*'))
-        print(gen_caption)
-        print(f' The LABELLED ground truth caption '.center(80, '*'))
-        print(ground_truth_caption)
+        logger.info(f' The caption PREDICTED by caption_bot '.center(80, '*'))
+        logger.info(gen_caption)
+        logger.info(f' The LABELLED ground truth caption '.center(80, '*'))
+        logger.info(ground_truth_caption)
 
         # cv2 operations to annotate the image with predicted and ground-truth captions
         current_img = cv2.imread(current_img_path)
