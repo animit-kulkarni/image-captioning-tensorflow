@@ -26,7 +26,8 @@ Note on dependencies:
 
 ## Setup and Usage
 
-~~~pip install virtualenv
+~~~
+pip install virtualenv
 
 virtualenv -p [path-to-python] venv
 
