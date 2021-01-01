@@ -37,23 +37,32 @@ pip install -r requirements.txt
 
 1. Clone the repository
 
-`git clone https://github.com/animit-kulkarni/InstagramCaptioner.git`
+~~~
+git clone https://github.com/animit-kulkarni/InstagramCaptioner.git`
+~~~
+2. Configure [config](config.py) file, ensuring paths for inputs and output are valid
 
-2. Configure config.py paths
+3. Download data using tensorflow api
 
-3. Download data
+~~~
+python data_management/download_data.py
+~~~
 
-`python data_management/download_data.py`
+2. Prepare image features by performing a forward pass through the CNN architecture
 
-2. Prepare image features
+~~~
+python prepare_img_features.py
+~~~
 
-`python prepare_img_features.py`
+3. Train model. Training parameters are found in [config.py](config.py). Tensorboard can be launched to track training at `http://localhost:6006/`
 
-3. Train model
-
-`python train.py`
+~~~
+python train.py
+~~~
 
 4. Inference
 
-`python inference.py [int]`
+~~~
+python inference.py [int]
+~~~
 
