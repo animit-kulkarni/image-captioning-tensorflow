@@ -9,7 +9,7 @@ import sys
 from config import CONFIG
 from model import CNN_Encoder, RNN_Decoder
 import utils as utils
-from prepare_img_features import load_image
+from prepare_img_features import load_image, model_config_dict
 from tools.timer import timer
 from tools.logging_helper import LOGGING_CONFIG
 
@@ -28,7 +28,7 @@ class InstgramCaptioner:
             CONFIG (CONFIG object): an object storing the configuration for package
         """
 
-        self.mobilenet_v2 = tf.keras.applications.MobileNetV2
+        self.cnn_backbone = model_config_dict[CONFIG.CNN_BACKBONE]['model']
         self.cnn_feature_model = self._reconfigure_cnn()
 
         self.encoder = CNN_Encoder(CONFIG.EMBEDDING_SIZE)
@@ -38,7 +38,7 @@ class InstgramCaptioner:
                                    decoder=self.decoder)
 
         ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_path, max_to_keep=5)
-        ckpt.restore(ckpt_manager.checkpoints[3])
+        ckpt.restore(ckpt_manager.latest_checkpoint)
 
         if ckpt_manager.latest_checkpoint:
             print("******** Restored from {}".format(ckpt_manager.latest_checkpoint))
@@ -62,7 +62,7 @@ class InstgramCaptioner:
         max_length = self.tokens_manager.max_length
         print('MAX LENGTH: ', max_length) 
         
-        attention_plot = np.zeros((max_length, 49))
+        attention_plot = np.zeros((max_length, model_config_dict[CONFIG.CNN_BACKBONE]['attention_features_shape']))
         # hidden.shape = [1, 512]
         # features,shape = [1, 49, 256]
         # decoder_input.shape = [1, 1]
@@ -106,13 +106,13 @@ class InstgramCaptioner:
         return features
 
     def _reconfigure_cnn(self):
-        """Reconfigures the MobileNetV2 architectire, removing the final layer (and ImageNet classification layer).
+        """Reconfigures the CNN architecture, removing the final layer (and ImageNet classification layer).
 
         Returns:
-            tf.keras.Model: the reconfigured MobileNetV2 architecture.
+            tf.keras.Model: the reconfigured architecture (e.g. MobileNetV2).
         """
 
-        model = self.mobilenet_v2(include_top=False, weights='imagenet')
+        model = self.cnn_backbone(include_top=False, weights='imagenet')
         new_input = model.input
         remaining_desired_architecture = model.layers[-1].output
         reconfigured_cnn = tf.keras.Model(new_input, remaining_desired_architecture)
@@ -126,11 +126,11 @@ class InstgramCaptioner:
             image_path (str): path to serialized img - png/jpg/jpeg
 
         Returns:
-            img: Tensor of image resized to (244, 244)
+            img: Tensor of image resized to e.g. (224, 224)
         """
         img = tf.io.read_file(image_path)
         img = tf.image.decode_jpeg(img, channels=3)
-        img = tf.image.resize(img, (224, 224))
+        img = tf.image.resize(img, model_config_dict[CONFIG.CNN_BACKBONE]['input_shape'])
         img = tf.keras.applications.imagenet_utils.preprocess_input(img)
         return img
 
@@ -147,10 +147,14 @@ class InstgramCaptioner:
                 with open(os.path.join(captions_dir,'caption_filename_tuple.pkl'), 'wb') as pickle_file:
                     pickle.dump(caption_filename_tuple, pickle_file)
 
-                caption_bot = InstgramCaptioner(checkpoint_path, tokenizer_path, CONFIG)
-                caption_filename_tuple_path = os.path.join(CONFIG.CACHE_DIR_ROOT, 'mobilenet_v2_captions', 'caption_filename_tuple.pkl')
+                tokenizer_path = os.path.join(CONFIG.CACHE_DIR_ROOT, f'{CONFIG.CNN_BACKBONE}_captions', 'coco_tokenizer.pkl') 
+                checkpoint_path = '/mnt/pythonfiles/models/mobilenet_v2_bahdanau/checkpoints/train/02012021-183517'
+                #model 31122020-180918 shows the best results so far
 
-                idx = 0 # take first img in dataset
+                caption_bot = InstgramCaptioner(checkpoint_path, tokenizer_path, CONFIG)
+                caption_filename_tuple_path = os.path.join(CONFIG.CACHE_DIR_ROOT, f'{CONFIG.CNN_BACKBONE}_captions', 'caption_filename_tuple.pkl')
+
+                idx = int(sys.argv[1])
                 caption_bot.test_img_from_mscoco(idx, caption_filename_tuple_path)
             
         Args:
@@ -183,19 +187,19 @@ class InstgramCaptioner:
 
 if __name__ == '__main__':
 
-    tokenizer_path = os.path.join(CONFIG.CACHE_DIR_ROOT, 'mobilenet_v2_captions', 'coco_tokenizer.pkl') 
-    checkpoint_path = '/mnt/pythonfiles/models/mobilenet_v2_bahdanau/checkpoints/train/02012021-183517'
+    tokenizer_path = os.path.join(CONFIG.CACHE_DIR_ROOT, f'{CONFIG.CNN_BACKBONE}_captions', f'coco_tokenizer_{CONFIG.NUMBER_OF_IMAGES}.pkl') 
+    checkpoint_path = '/mnt/pythonfiles/models/inception_v3_bahdanau/02012021-230609'
     #model 31122020-180918 shows the best results so far
 
     caption_bot = InstgramCaptioner(checkpoint_path, tokenizer_path, CONFIG)
-    caption_filename_tuple_path = os.path.join(CONFIG.CACHE_DIR_ROOT, 'mobilenet_v2_captions', 'caption_filename_tuple.pkl')
+    caption_filename_tuple_path = os.path.join(CONFIG.CACHE_DIR_ROOT, f'{CONFIG.CNN_BACKBONE}_captions', f'caption_filename_tuple_{CONFIG.NUMBER_OF_IMAGES}.pkl')
 
     idx = int(sys.argv[1])
     caption_bot.test_img_from_mscoco(idx, caption_filename_tuple_path)
 
 
 
-
+#/mnt/pythonfiles/models/inception_v3_bahdanau/02012021-230609
 
 
 

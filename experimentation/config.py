@@ -19,7 +19,7 @@ class CONFIG:
         UNITS = 512
         VOCAB_SIZE = VOCABULARY_TOP_K + 1
         EPOCHS = 20
-        LEARNING_RATE = 0.03
+        LEARNING_RATE = 0.001
 
         # Evaluation parameters
         EVAL_BATCH_SIZE = 16
