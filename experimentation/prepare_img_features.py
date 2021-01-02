@@ -22,11 +22,11 @@ np.random.seed(seed)
 
 model_config_dict = {'mobilenet_v2': {'model': tf.keras.applications.MobileNetV2,
                                       'features_shape': 1280,
-                                      'input_shape': (224, 224)
+                                      'input_shape': (224, 224),
                                       'attention_features_shape': 49}, 
                      'inception_v3': {'model': tf.keras.applications.InceptionV3,
                                       'features_shape': 2048,
-                                      'input_shape': (299, 299)
+                                      'input_shape': (299, 299),
                                       'attention_features_shape': 64}
                      }
 
@@ -64,7 +64,7 @@ def preprocess_img_and_cache(img_name_vector, cache_dir, model_config=model_conf
 @timer
 def reconfigure_cnn(model_config):
 
-    model = model_config_dict.[CONFIG.CNN_BACKBONE]['model'](include_top=False, weights='imagenet')
+    model = model_config_dict[CONFIG.CNN_BACKBONE]['model'](include_top=False, weights='imagenet')
 
     new_input = model.input
     remaining_desired_architecture = model.layers[-1].output
@@ -75,7 +75,7 @@ def reconfigure_cnn(model_config):
 def load_image(image_path):
     img = tf.io.read_file(image_path)
     img = tf.image.decode_jpeg(img, channels=3)
-    img = tf.image.resize(img, model_config_dict['input_shape'])
+    img = tf.image.resize(img, model_config_dict[CONFIG.CNN_BACKBONE]['input_shape'])
     img = tf.keras.applications.imagenet_utils.preprocess_input(img)
     return img, image_path
 

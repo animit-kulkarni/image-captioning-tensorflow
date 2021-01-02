@@ -54,7 +54,7 @@ def calc_max_length(tensor):
     # Load the numpy files
 def map_func(img_name, caption):
     img_name_file_only = img_name.decode('utf-8').split('/')[-1]
-    cached_features_to_load = os.path.join(CONFIG.CACHE_DIR_ROOT, 'mobilenet_v2_features', img_name_file_only + '.npy')
+    cached_features_to_load = os.path.join(CONFIG.CACHE_DIR_ROOT, f'{CONFIG.CNN_BACKBONE}_features', img_name_file_only + '.npy')
     img_tensor = np.load(cached_features_to_load)
     return img_tensor, caption
 

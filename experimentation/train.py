@@ -135,13 +135,13 @@ if __name__ == '__main__':
     else:
         model_id = datetime.now().strftime("%d%m%Y-%H%M%S")
 
-    caption_filename_tuple_path = os.path.join(CONFIG.CACHE_DIR_ROOT, 'mobilenet_v2_captions', f'caption_filename_tuple_{CONFIG.NUMBER_OF_IMAGES}.pkl')
+    caption_filename_tuple_path = os.path.join(CONFIG.CACHE_DIR_ROOT, f'{CONFIG.CNN_BACKBONE}_captions', f'caption_filename_tuple_{CONFIG.NUMBER_OF_IMAGES}.pkl')
         
     logger.info('Preparing tokens')
     tokens_manager = TokensManager()
     train_captions, val_captions = tokens_manager.prepare_imgs_tokens(caption_filename_tuple_path)
     tokens_manager.save_caption_file_tuples(train_captions, val_captions) # this isn't necessary for training but useful for analytical work
-    tokenizer_save_path = os.path.join(CONFIG.CACHE_DIR_ROOT, 'mobilenet_v2_captions', f'coco_tokenizer_{CONFIG.NUMBER_OF_IMAGES}.pkl') 
+    tokenizer_save_path = os.path.join(CONFIG.CACHE_DIR_ROOT, f'{CONFIG.CNN_BACKBONE}_captions', f'coco_tokenizer_{CONFIG.NUMBER_OF_IMAGES}.pkl') 
     pickle.dump(tokens_manager, open(tokenizer_save_path, 'wb')) # save the tokenizer for inference
 
     # separate the filenames and captions to get correct format for dataset work
@@ -187,8 +187,8 @@ if __name__ == '__main__':
 
     loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True, reduction='none')
 
-    # Admin
-    checkpoint_path = os.path.join(CONFIG.CHECKPOINT_PATH, 'checkpoints/train', model_id)
+    # Checkpoints
+    checkpoint_path = os.path.join(CONFIG.CHECKPOINT_PATH, CONFIG.CNN_BACKBONE + '_bahdanau', model_id)
     if not os.path.exists(checkpoint_path):
         logger.info(f'Creating directory: {checkpoint_path}')
         os.makedirs(checkpoint_path)
