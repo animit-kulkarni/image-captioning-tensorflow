@@ -22,12 +22,17 @@ np.random.seed(seed)
 
 model_config_dict = {'mobilenet_v2': {'model': tf.keras.applications.MobileNetV2,
                                       'features_shape': 1280,
-                                      'attention_features_shape': 49}
+                                      'input_shape': (224, 224)
+                                      'attention_features_shape': 49}, 
+                     'inception_v3': {'model': tf.keras.applications.InceptionV3,
+                                      'features_shape': 2048,
+                                      'input_shape': (299, 299)
+                                      'attention_features_shape': 64}
                      }
 
 
 @timer
-def preprocess_img_and_cache(img_name_vector, cache_dir, model_config=model_config_dict['mobilenet_v2']):
+def preprocess_img_and_cache(img_name_vector, cache_dir, model_config=model_config_dict[CONFIG.CNN_BACKBONE]):
 
     # Get unique images
     encode_train = sorted(set(img_name_vector))
@@ -59,7 +64,7 @@ def preprocess_img_and_cache(img_name_vector, cache_dir, model_config=model_conf
 @timer
 def reconfigure_cnn(model_config):
 
-    model = model_config['model'](include_top=False, weights='imagenet')
+    model = model_config_dict.[CONFIG.CNN_BACKBONE]['model'](include_top=False, weights='imagenet')
 
     new_input = model.input
     remaining_desired_architecture = model.layers[-1].output
@@ -70,13 +75,14 @@ def reconfigure_cnn(model_config):
 def load_image(image_path):
     img = tf.io.read_file(image_path)
     img = tf.image.decode_jpeg(img, channels=3)
-    img = tf.image.resize(img, (224, 224))
+    img = tf.image.resize(img, model_config_dict['input_shape'])
     img = tf.keras.applications.imagenet_utils.preprocess_input(img)
     return img, image_path
 
 
 if __name__ == '__main__':
 
+    assert CONFIG.INCLUDE_CNN_IN_TRAINING is False, "Don't run this script since train CNN backbone is turned on"
     captions_dir = os.path.join(CONFIG.CACHE_DIR_ROOT, f'{CONFIG.CNN_BACKBONE}_captions')
     features_dir = os.path.join(CONFIG.CACHE_DIR_ROOT, f'{CONFIG.CNN_BACKBONE}_features')
 
@@ -89,7 +95,7 @@ if __name__ == '__main__':
     train_captions, img_name_vector = utils.organise_data()
     caption_filename_tuple = list(zip(train_captions, img_name_vector))
 
-    with open(os.path.join(captions_dir,'caption_filename_tuple.pkl'), 'wb') as pickle_file:
+    with open(os.path.join(captions_dir,f'caption_filename_tuple_{CONFIG.NUMBER_OF_IMAGES}.pkl'), 'wb') as pickle_file:
         pickle.dump(caption_filename_tuple, pickle_file)
 
     # FEATURES

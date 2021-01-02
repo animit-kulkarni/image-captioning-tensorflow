@@ -100,9 +100,9 @@ class TokensManager:
         caption_cache_dir = os.path.join(CONFIG.CACHE_DIR_ROOT, 'mobilenet_v2_captions')
         logger.info(f'Saving train_captions, val_captions to {caption_cache_dir}')
         
-        with open(os.path.join(caption_cache_dir,'train_captions.pkl'), 'wb') as f:
+        with open(os.path.join(caption_cache_dir,f'train_captions_{CONFIG.NUMBER_OF_IMAGES}.pkl'), 'wb') as f:
             pickle.dump(train_captions, f)
-        with open(os.path.join(caption_cache_dir,'val_captions.pkl'), 'wb') as f:
+        with open(os.path.join(caption_cache_dir,f'val_captions_{CONFIG.NUMBER_OF_IMAGES}.pkl'), 'wb') as f:
             pickle.dump(val_captions, f)
 
 
