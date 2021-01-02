@@ -249,7 +249,7 @@ if __name__ == '__main__':
         logger.info('Epoch: {} | Loss {:.6f}'.format(epoch + 1, total_loss/num_steps))
         logger.info('Time taken for 1 epoch {} sec\n'.format(time.time() - start))
 
-    logger.info(' **** Saving final model weights ****')
+    logger.info(f' **** A gentle reminder that checkpoint path is: {checkpoint_path} ****')
 
     # encoder.save_weights(os.path.join(checkpoint_path, 'encoder_weights.tf'))
     # logger.info(f'      Encoder weights saved to {checkpoint_path}')
