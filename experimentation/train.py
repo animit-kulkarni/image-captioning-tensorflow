@@ -1,4 +1,5 @@
 import tensorflow as tf
+from tensorflow.keras import backend as K
 import numpy as np
 import pickle
 import os
@@ -6,6 +7,7 @@ import time
 from datetime import datetime
 import logging
 import cv2
+from tqdm import tqdm
 
 from config import CONFIG
 from tools.logging_helper import LOGGING_CONFIG
@@ -71,6 +73,59 @@ def train_step(img_tensor, target, tokenizer, loss_object):
     return loss, total_loss
 
 
+#@timer
+def eval_step(img_tensor, target, tokenizer, eval_batch_size):
+
+    batch_hidden = decoder.reset_state(batch_size=eval_batch_size)
+    features = encoder(img_tensor)
+    dec_input = tf.expand_dims([tokenizer.word_index['<start>']] * target.shape[0], 1)
+    max_length = target.shape[1]
+
+    predicted_words = [['<start>'] for i in range(eval_batch_size)]
+    for _ in range(max_length):
+        # we could use the code below instead to generate randomness in sentence creation - useful for production
+        # but not the testing here: tf.random.categorical(predictions, 1, seed=42)[0][0].numpy()
+        batch_predictions, batch_hidden, _ = decoder(dec_input, features, batch_hidden)
+        predicted_ids = K.argmax(batch_predictions, axis=1)
+        words = [tokenizer.index_word[int(id_)] for id_ in predicted_ids]
+
+        for i, word in enumerate(words):
+            if predicted_words[i][-1] != '<end>':
+                predicted_words[i].append(word)
+            else: 
+                predicted_words[i].append('<pad>')
+
+        dec_input = tf.expand_dims(predicted_ids, 1)
+    
+    target_words = []
+    for caption in target:
+        target_words.append([tokenizer.index_word[int(token)] for token in caption])
+
+    total_bleu = np.array([0, 0, 0, 0], dtype = 'float64')
+    for target, predicted in zip(target_words, predicted_words):
+        bleu_score = evaluate.bleu_score(predicted[1:], target, verbose=False)
+        total_bleu += bleu_score
+    
+    batch_bleu_score = total_bleu / eval_batch_size
+
+    return batch_bleu_score
+
+def run_eval():
+    print(f'EVALUATING {eval_steps} steps')
+    total_bleu_score = 0
+    for (v_batch, (v_img_tensor, v_target)) in enumerate(val_dataset):
+        batch_bleu_score = eval_step(v_img_tensor, v_target, tokens_manager.tokenizer, CONFIG.EVAL_BATCH_SIZE)
+        logger.info(f"Eval step {v_batch}/{eval_steps} || BLEU-scores: {batch_bleu_score}")
+        total_bleu_score += batch_bleu_score
+        average_bleu_score = total_bleu_score/(eval_steps)
+
+    with train_summary_writer.as_default():
+        tf.summary.scalar('AVG-BLEU-1', average_bleu_score[0], step=step)
+        tf.summary.scalar('AVG-BLEU-2', average_bleu_score[1], step=step)
+        tf.summary.scalar('AVG-BLEU-3', average_bleu_score[2], step=step)
+        tf.summary.scalar('AVG-BLEU-4', average_bleu_score[3], step=step)
+
+
 if __name__ == '__main__':
 
     #TODO: I think a TrainingManager class could be made where all this model_id, path creation etc is made and reduces the 
@@ -80,13 +135,13 @@ if __name__ == '__main__':
     else:
         model_id = datetime.now().strftime("%d%m%Y-%H%M%S")
 
-    caption_filename_tuple_path = os.path.join(CONFIG.CACHE_DIR_ROOT, 'mobilenet_v2_captions', 'caption_filename_tuple.pkl')
+    caption_filename_tuple_path = os.path.join(CONFIG.CACHE_DIR_ROOT, 'mobilenet_v2_captions', f'caption_filename_tuple_{CONFIG.NUMBER_OF_IMAGES}.pkl')
         
     logger.info('Preparing tokens')
     tokens_manager = TokensManager()
     train_captions, val_captions = tokens_manager.prepare_imgs_tokens(caption_filename_tuple_path)
     tokens_manager.save_caption_file_tuples(train_captions, val_captions) # this isn't necessary for training but useful for analytical work
-    tokenizer_save_path = os.path.join(CONFIG.CACHE_DIR_ROOT, 'mobilenet_v2_captions', 'coco_tokenizer.pkl') 
+    tokenizer_save_path = os.path.join(CONFIG.CACHE_DIR_ROOT, 'mobilenet_v2_captions', f'coco_tokenizer_{CONFIG.NUMBER_OF_IMAGES}.pkl') 
     pickle.dump(tokens_manager, open(tokenizer_save_path, 'wb')) # save the tokenizer for inference
 
     # separate the filenames and captions to get correct format for dataset work
@@ -163,12 +218,13 @@ if __name__ == '__main__':
     loss_plot = []
     step = 0
     num_steps = len(train_captions)//CONFIG.BATCH_SIZE
+    eval_steps = (len(val_captions)// CONFIG.EVAL_BATCH_SIZE)
+
     for epoch in range(start_epoch, CONFIG.EPOCHS):
         start = time.time()
         total_loss = 0
 
         for (batch, (img_tensor, target)) in enumerate(train_dataset):
-
             batch_loss, t_loss = train_step(img_tensor, target, tokens_manager.tokenizer, loss_object)
             step += 1
             total_loss += t_loss
@@ -180,17 +236,9 @@ if __name__ == '__main__':
                 tf.summary.scalar('loss', batch_loss, step=step)
                 tf.summary.scalar('learning_rate', CONFIG.LEARNING_RATE, step=step)
 
-            # if batch % 20 == 0:
-            #     print('EVALUATING')
-            #     total_bleu_score = 0
-            #     for (batch, (img_tensor, target)) in enumerate(val_dataset):
-            #         batch_bleu_score = eval_step(img_tensor, target, tokens_manager.tokenizer, CONFIG.EVAL_BATCH_SIZE)
-            #         total_bleu_score += batch_bleu_score
-            #     average_bleu_score = total_bleu_score/((len(val_captions)// CONFIG.EVAL_BATCH_SIZE))
+            # if batch % 1000 == 0 and batch != 0:
+            #     run_eval()
 
-            #     with train_summary_writer.as_default():
-            #         tf.summary.scalar('average_bleu_score', average_bleu_score, step=step)
-            
         # storing the epoch end loss value to plot later
         loss_plot.append(total_loss / num_steps)
 

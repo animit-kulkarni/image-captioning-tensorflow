@@ -38,7 +38,7 @@ class InstgramCaptioner:
                                    decoder=self.decoder)
 
         ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_path, max_to_keep=5)
-        ckpt.restore(ckpt_manager.latest_checkpoint)
+        ckpt.restore(ckpt_manager.checkpoints[3])
 
         if ckpt_manager.latest_checkpoint:
             print("******** Restored from {}".format(ckpt_manager.latest_checkpoint))
@@ -184,7 +184,8 @@ class InstgramCaptioner:
 if __name__ == '__main__':
 
     tokenizer_path = os.path.join(CONFIG.CACHE_DIR_ROOT, 'mobilenet_v2_captions', 'coco_tokenizer.pkl') 
-    checkpoint_path = '/mnt/pythonfiles/models/mobilenet_v2_bahdanau/checkpoints/train/31122020-180918'
+    checkpoint_path = '/mnt/pythonfiles/models/mobilenet_v2_bahdanau/checkpoints/train/02012021-183517'
+    #model 31122020-180918 shows the best results so far
 
     caption_bot = InstgramCaptioner(checkpoint_path, tokenizer_path, CONFIG)
     caption_filename_tuple_path = os.path.join(CONFIG.CACHE_DIR_ROOT, 'mobilenet_v2_captions', 'caption_filename_tuple.pkl')
