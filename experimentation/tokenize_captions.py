@@ -11,6 +11,7 @@ import logging
 from config import CONFIG
 from tools.timer import timer
 
+CONFIG = CONFIG()
 logger = logging.getLogger(__name__)
 seed = 42
 np.random.seed(seed)  
@@ -97,7 +98,7 @@ class TokensManager:
 
     def save_caption_file_tuples(self, train_captions, val_captions):
 
-        caption_cache_dir = os.path.join(CONFIG.CACHE_DIR_ROOT, 'mobilenet_v2_captions')
+        caption_cache_dir = os.path.join(CONFIG.CACHE_DIR_ROOT, f'{CONFIG.CNN_BACKBONE}_captions')
         logger.info(f'Saving train_captions, val_captions to {caption_cache_dir}')
         
         with open(os.path.join(caption_cache_dir,f'train_captions_{CONFIG.NUMBER_OF_IMAGES}.pkl'), 'wb') as f:

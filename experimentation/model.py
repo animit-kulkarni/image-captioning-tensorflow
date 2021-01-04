@@ -3,6 +3,11 @@
 # you get the following error:
 # ValueError: Tensor's shape (1536,) is not compatible with supplied shape (2, 1536)
 import tensorflow as tf
+from config import CONFIG
+CONFIG = CONFIG()
+from prepare_img_features import model_config_dict
+
+
 
 class BahdanauAttention(tf.keras.Model):
   def __init__(self, units):
@@ -43,7 +48,7 @@ class CNN_Encoder(tf.keras.Model):
         # shape after fc == (batch_size, 49, embedding_dim=256)
         self.include_cnn_backbone = include_cnn_backbone
         if self.include_cnn_backbone:
-          self.cnn = tf.keras.applications.MobileNetV2
+          self.cnn = model_config_dict[CONFIG.CNN_BACKBONE]['model']
           self.cnn_backbone = self._reconfigure_cnn()
         
         self.fc = tf.keras.layers.Dense(embedding_dim)

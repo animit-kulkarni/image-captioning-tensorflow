@@ -3,10 +3,11 @@ import os
 import json
 import collections
 import cv2
+import tensorflow as tf
+from prepare_img_features import model_config_dict
 
 from config import CONFIG
-from prepare_img_features import load_image
-
+CONFIG = CONFIG()
 
 seed = 42
 np.random.seed(seed)  
@@ -65,6 +66,13 @@ def map_func_including_cnn(img_name, caption):
 
 
     return img_tensor, caption
+
+def load_image(image_path):
+    img = tf.io.read_file(image_path)
+    img = tf.image.decode_jpeg(img, channels=3)
+    img = tf.image.resize(img, model_config_dict[CONFIG.CNN_BACKBONE]['input_shape'])
+    img = tf.keras.applications.imagenet_utils.preprocess_input(img)
+    return img, image_path
 
 
 

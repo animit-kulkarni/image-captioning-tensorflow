@@ -7,9 +7,10 @@ import logging
 import sys
 
 from config import CONFIG
+CONFIG = CONFIG()
 from model import CNN_Encoder, RNN_Decoder
 import utils as utils
-from prepare_img_features import load_image, model_config_dict
+from prepare_img_features import  model_config_dict
 from tools.timer import timer
 from tools.logging_helper import LOGGING_CONFIG
 
@@ -38,10 +39,12 @@ class InstgramCaptioner:
                                    decoder=self.decoder)
 
         ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_path, max_to_keep=5)
-        ckpt.restore(ckpt_manager.latest_checkpoint)
+        #chosen_checkpoint = ckpt_manager.checkpoints[2]
+        chosen_checkpoint = ckpt_manager.latest_checkpoint
+        ckpt.restore(chosen_checkpoint)
 
         if ckpt_manager.latest_checkpoint:
-            print("******** Restored from {}".format(ckpt_manager.latest_checkpoint))
+            print("******** Restored from {}".format(chosen_checkpoint))
         else:
             print("******** Initializing from scratch.")
 
@@ -188,12 +191,12 @@ class InstgramCaptioner:
 if __name__ == '__main__':
 
     tokenizer_path = os.path.join(CONFIG.CACHE_DIR_ROOT, f'{CONFIG.CNN_BACKBONE}_captions', f'coco_tokenizer_{CONFIG.NUMBER_OF_IMAGES}.pkl') 
-    checkpoint_path = '/mnt/pythonfiles/models/inception_v3_bahdanau/02012021-230609'
+    checkpoint_path = '/mnt/pythonfiles/models/inception_v3_bahdanau/03012021-205430'
     #model 31122020-180918 shows the best results so far
 
     caption_bot = InstgramCaptioner(checkpoint_path, tokenizer_path, CONFIG)
     caption_filename_tuple_path = os.path.join(CONFIG.CACHE_DIR_ROOT, f'{CONFIG.CNN_BACKBONE}_captions', f'caption_filename_tuple_{CONFIG.NUMBER_OF_IMAGES}.pkl')
-
+    
     idx = int(sys.argv[1])
     caption_bot.test_img_from_mscoco(idx, caption_filename_tuple_path)
 

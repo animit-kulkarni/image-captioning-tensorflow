@@ -17,6 +17,9 @@ from config import CONFIG
 from tools.timer import timer
 import utils
 from tqdm import tqdm
+
+CONFIG = CONFIG()
+
 seed = 42
 np.random.seed(seed) 
 
@@ -42,7 +45,7 @@ def preprocess_img_and_cache(img_name_vector, cache_dir, model_config=model_conf
     # Why these dims? ---> (batch_size, 7x7 grid, with 1280 feature maps) Look at mobilenet_v2 architecture
 
     image_dataset = tf.data.Dataset.from_tensor_slices(encode_train)
-    image_dataset = image_dataset.map(load_image,
+    image_dataset = image_dataset.map(utils.load_image,
                                     num_parallel_calls=tf.data.experimental.AUTOTUNE).batch(16)
 
     img_feature_extractor = reconfigure_cnn(model_config)
@@ -71,13 +74,6 @@ def reconfigure_cnn(model_config):
     reconfigured_cnn = tf.keras.Model(new_input, remaining_desired_architecture)
 
     return reconfigured_cnn
-
-def load_image(image_path):
-    img = tf.io.read_file(image_path)
-    img = tf.image.decode_jpeg(img, channels=3)
-    img = tf.image.resize(img, model_config_dict[CONFIG.CNN_BACKBONE]['input_shape'])
-    img = tf.keras.applications.imagenet_utils.preprocess_input(img)
-    return img, image_path
 
 
 if __name__ == '__main__':
