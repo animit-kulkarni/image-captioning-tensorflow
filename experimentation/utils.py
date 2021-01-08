@@ -4,10 +4,20 @@ import json
 import collections
 import cv2
 import tensorflow as tf
-from prepare_img_features import model_config_dict
 
 from config import CONFIG
 CONFIG = CONFIG()
+#from prepare_img_features import model_config_dict
+
+model_config_dict = {'mobilenet_v2': {'model': tf.keras.applications.MobileNetV2,
+                                      'features_shape': 1280,
+                                      'input_shape': (224, 224),
+                                      'attention_features_shape': 49}, 
+                     'inception_v3': {'model': tf.keras.applications.InceptionV3,
+                                      'features_shape': 2048,
+                                      'input_shape': (299, 299),
+                                      'attention_features_shape': 64}
+                     }
 
 seed = 42
 np.random.seed(seed)  
@@ -63,8 +73,6 @@ def map_func_including_cnn(img_name, caption):
     img_name_file_only = img_name.decode('utf-8').split('/')[-1]
     path_to_file = os.path.join(CONFIG.IMAGES_DIR, img_name_file_only)
     img_tensor, _ = load_image(path_to_file)
-
-
     return img_tensor, caption
 
 def load_image(image_path):
