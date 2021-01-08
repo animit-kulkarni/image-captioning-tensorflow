@@ -7,8 +7,6 @@ from config import CONFIG
 CONFIG = CONFIG()
 from prepare_img_features import model_config_dict
 
-
-
 class BahdanauAttention(tf.keras.Model):
   def __init__(self, units):
     super(BahdanauAttention, self).__init__()
@@ -45,7 +43,11 @@ class CNN_Encoder(tf.keras.Model):
     # This encoder passes those features through a Fully connected layer
     def __init__(self, embedding_dim, include_cnn_backbone=False):
         super(CNN_Encoder, self).__init__()
+
         # shape after fc == (batch_size, 49, embedding_dim=256)
+        self.image_dropout_layer = tf.keras.layers.Dropout(rate=CONFIG.DROPOUT['IMAGE'])
+        self.image_embedding_dropout_layer = tf.keras.layers.Dropout(rate=CONFIG.DROPOUT['IMAGE_EMBEDDING'])
+
         self.include_cnn_backbone = include_cnn_backbone
         if self.include_cnn_backbone:
           self.cnn = model_config_dict[CONFIG.CNN_BACKBONE]['model']
@@ -53,14 +55,17 @@ class CNN_Encoder(tf.keras.Model):
         
         self.fc = tf.keras.layers.Dense(embedding_dim)
 
+
     def call(self, x):
         if self.include_cnn_backbone:
-          assert True, "Place holder to check input dims for image size"
           x = self.cnn_backbone(x)
           x = tf.reshape(x, (x.shape[0], -1, x.shape[3]))
-          
+
+        x = self.image_dropout_layer(x)  # dOn't think this does anything here because there's no weights to dropout ...
         x = self.fc(x)
-        x = tf.nn.relu(x)
+        if CONFIG.RELU_ENCODER:
+          x = tf.nn.relu(x)
+        x = self.image_embedding_dropout_layer(x)
         return x
 
     def _reconfigure_cnn(self):
@@ -75,30 +80,34 @@ class RNN_Decoder(tf.keras.Model):
   def __init__(self, embedding_dim, units, vocab_size):
     super(RNN_Decoder, self).__init__()
     self.units = units #512
+    self.word_embedding_dropout_layer = tf.keras.layers.Dropout(rate=CONFIG.DROPOUT['WORD_EMBEDDING'])
 
-    self.embedding = tf.keras.layers.Embedding(vocab_size, embedding_dim)
-    self.gru = tf.keras.layers.GRU(self.units,
+    self.embedding = tf.keras.layers.Embedding(vocab_size, embedding_dim) #vocab_size = 5001, embedding_dim=256
+    self.gru = tf.keras.layers.GRU(self.units, # units=512
                                    return_sequences=True,
                                    return_state=True,
                                    recurrent_initializer='glorot_uniform')
-    self.fc1 = tf.keras.layers.Dense(self.units)
-    self.fc2 = tf.keras.layers.Dense(vocab_size)
+    self.fc1 = tf.keras.layers.Dense(self.units) # units=512
+    self.fc2 = tf.keras.layers.Dense(vocab_size) # vocab_size=5001
 
-    self.attention = BahdanauAttention(self.units)
+    self.attention = BahdanauAttention(self.units) # units=512
 
   def call(self, x, features, hidden):
 
-    # x.shape = [1, 1]
+    # x.shape = [batch_size, 1] (this is just a number i.e. input id)
     # features.shape = [batch_size, 49, 256]
     # hidden.shape = [batch_size, 512]
 
     # defining attention as a separate model
+    # context_vector = [512, 256] (batch_size, embedding_size)
+    # attention_weights = TensorShape([512, 64, 1])
     context_vector, attention_weights = self.attention(features, hidden)
 
-    # x shape after passing through embedding == (batch_size, 1, embedding_dim=512)
+    # x shape after passing through embedding == (batch_size, 1, embedding_dim=256)
     x = self.embedding(x)
+    x = self.word_embedding_dropout_layer(x)
 
-    # x shape after concatenation == (batch_size, 1, embedding_dim=512 + hidden_size=512)
+    # x shape after concatenation == (batch_size, 1, embedding_dim=256 + hidden_size=512)
     x = tf.concat([tf.expand_dims(context_vector, 1), x], axis=-1)
 
     # passing the concatenated vector to the GRU

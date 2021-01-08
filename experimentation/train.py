@@ -33,7 +33,7 @@ logger.info('Logging has begun!')
 wandb.init(project="instagramcaptioner")
 wandb.config.update(CONFIG.__dict__)
 
-@tf.function
+#@tf.function
 def train_step(img_tensor, target, tokenizer, loss_object, validation=False):
     """Training step as tf.function to allow for gradient updates in tensorflow.
 
