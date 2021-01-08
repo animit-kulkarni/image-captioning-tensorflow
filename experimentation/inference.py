@@ -18,6 +18,8 @@ logging.basicConfig(**LOGGING_CONFIG.print_kwargs)
 logger = logging.getLogger(__name__)
 logger.info('Logging has begun!')
 
+os.environ["CUDA_VISIBLE_DEVICES"]=""
+
 class InstgramCaptioner:
 
     def __init__(self, checkpoint_path, tokenizer_path, CONFIG):
@@ -191,7 +193,7 @@ class InstgramCaptioner:
 if __name__ == '__main__':
 
     tokenizer_path = os.path.join(CONFIG.CACHE_DIR_ROOT, f'{CONFIG.CNN_BACKBONE}_captions', f'coco_tokenizer_{CONFIG.NUMBER_OF_IMAGES}.pkl') 
-    checkpoint_path = '/mnt/pythonfiles/models/inception_v3_bahdanau/03012021-205430'
+    checkpoint_path = '/mnt/pythonfiles/models/mobilenet_v2_bahdanau/07012021-232658'
     #model 31122020-180918 shows the best results so far
 
     caption_bot = InstgramCaptioner(checkpoint_path, tokenizer_path, CONFIG)
