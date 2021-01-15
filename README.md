@@ -12,9 +12,11 @@ Whilst object detection is a mature and heavily researched topic within the comp
 
 With this piece of work, an attempt is made to solve a frequent (yet somewhat less empathetic to society compared to the applications mentioned above...) problem in social media - deciding on a caption for your latest instagram post. 
 
-Here a MobileNetV2 architecture is used to encode the image as input features to a GRU sequence model utilising Bahdanau attention. The model was trained with teacher forcing.
+Here a CNN architecture (MobileNetV2 and InceptionV3, but tehcnically any CNN backbone supported in keras.applications) is used to encode the image as input features to a GRU sequence model utilising Bahdanau attention. The model was trained under teacher forcing.
 
-The model has been trained on the MSCOCO 2014 dataset. Whilst 2 x Nvidia GeForce RTX 2080 Ti GPUs were used to train the model, this implementation can be trained on CPU subject to library requirements.
+More information on the model and experiments can be found here [placeholder].  
+
+The model has been trained on the MSCOCO 2014 dataset. Whilst 2 x Nvidia GeForce RTX 2080 Ti GPUs were used in training, this implementation can be trained on CPU subject to library requirements.
 
 ## Technologies
 * python 3.6.8
