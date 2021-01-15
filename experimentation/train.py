@@ -19,6 +19,7 @@ from loss import loss_function
 from prepare_img_features import model_config_dict
 from tokenize_captions import TokensManager
 import evaluate
+import evaluation
 
 CONFIG = CONFIG()
 
