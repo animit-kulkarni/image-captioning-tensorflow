@@ -87,6 +87,8 @@ class RNN_Decoder(tf.keras.Model):
                                    return_sequences=True,
                                    return_state=True,
                                    recurrent_initializer='glorot_uniform')
+
+    # TODO: Can defo apply dropout here too ...                               
     self.fc1 = tf.keras.layers.Dense(self.units) # units=512
     self.fc2 = tf.keras.layers.Dense(vocab_size) # vocab_size=5001
 
