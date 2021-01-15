@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "../.."
+		},
+		{
+			"path": "../../../../models"
+		},
+		{
+			"path": "../../../../training-sets"
+		}
+	],
+	"settings": {}
+}
