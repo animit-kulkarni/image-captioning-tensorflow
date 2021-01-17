@@ -18,8 +18,8 @@ from model import CNN_Encoder, RNN_Decoder
 from loss import loss_function
 from prepare_img_features import model_config_dict
 from tokenize_captions import TokensManager
-import evaluate
-import evaluation
+
+from evaluate import EvaluationHandler
 
 CONFIG = CONFIG()
 
@@ -31,10 +31,11 @@ logging.basicConfig(**LOGGING_CONFIG.print_kwargs)
 logger = logging.getLogger(__name__)
 logger.info('Logging has begun!')
 
-wandb.init(project="instagramcaptioner")
-wandb.config.update(CONFIG.__dict__)
+if CONFIG.WANDB:
+    wandb.init(project="instagramcaptioner")
+    wandb.config.update(CONFIG.__dict__)
 
-#@tf.function
+@tf.function
 def train_step(img_tensor, target, tokenizer, loss_object, validation=False):
     """Training step as tf.function to allow for gradient updates in tensorflow.
 
@@ -62,60 +63,10 @@ def train_step(img_tensor, target, tokenizer, loss_object, validation=False):
         gradients = tape.gradient(loss, trainable_variables)
         optimizer.apply_gradients(zip(gradients, trainable_variables))
 
-    return loss, total_loss
-
-
-#@timer
-def eval_step(img_tensor, target, tokenizer, eval_batch_size):
-
-    batch_hidden = decoder.reset_state(batch_size=eval_batch_size)
-    features = encoder(img_tensor)
-    dec_input = tf.expand_dims([tokenizer.word_index['<start>']] * target.shape[0], 1)
-    max_length = target.shape[1]
-
-    predicted_words = [['<start>'] for i in range(eval_batch_size)]
-    for _ in range(max_length):
-        # we could use the code below instead to generate randomness in sentence creation - useful for production
-        # but not the testing here: tf.random.categorical(predictions, 1, seed=42)[0][0].numpy()
-        batch_predictions, batch_hidden, _ = decoder(dec_input, features, batch_hidden)
-        predicted_ids = K.argmax(batch_predictions, axis=1)
-        words = [tokenizer.index_word[int(id_)] for id_ in predicted_ids]
-
-        for i, word in enumerate(words):
-            if predicted_words[i][-1] != '<end>':
-                predicted_words[i].append(word)
-            else: 
-                predicted_words[i].append('<pad>')
-
-        dec_input = tf.expand_dims(predicted_ids, 1)
+        return loss, total_loss
     
-    target_words = []
-    for caption in target:
-        target_words.append([tokenizer.index_word[int(token)] for token in caption])
-
-    total_bleu = np.array([0, 0, 0, 0], dtype = 'float64')
-    for target, predicted in zip(target_words, predicted_words):
-        bleu_score = evaluate.bleu_score(predicted[1:], target, verbose=False)
-        total_bleu += bleu_score
-    
-    batch_bleu_score = total_bleu / eval_batch_size
-
-    return batch_bleu_score
-
-def run_eval():
-    print(f'EVALUATING {eval_steps} steps')
-    total_bleu_score = 0
-    for (v_batch, (v_img_tensor, v_target)) in enumerate(val_dataset):
-        batch_bleu_score = eval_step(v_img_tensor, v_target, tokens_manager.tokenizer, CONFIG.EVAL_BATCH_SIZE)
-        logger.info(f"Eval step {v_batch}/{eval_steps} || BLEU-scores: {batch_bleu_score}")
-        total_bleu_score += batch_bleu_score
-        average_bleu_score = total_bleu_score/(eval_steps)
-
-    with train_summary_writer.as_default():
-        tf.summary.scalar('AVG-BLEU-1', average_bleu_score[0], step=step)
-        tf.summary.scalar('AVG-BLEU-2', average_bleu_score[1], step=step)
-        tf.summary.scalar('AVG-BLEU-3', average_bleu_score[2], step=step)
-        tf.summary.scalar('AVG-BLEU-4', average_bleu_score[3], step=step)
+    else:
+        return loss, total_loss, predictions
 
 
 if __name__ == '__main__':
@@ -132,7 +83,6 @@ if __name__ == '__main__':
     pickle.dump(tokens_manager, open(tokenizer_save_path, 'wb')) # save the tokenizer for inference
 
     # separate the filenames and captions to get correct format for dataset work
-
     train_dataset = tf.data.Dataset.from_tensor_slices(([t[0] for t in train_captions], [t[1] for t in train_captions]))
     val_dataset = tf.data.Dataset.from_tensor_slices(([v[0] for v in val_captions], [v[1] for v in val_captions]))
 
@@ -152,6 +102,7 @@ if __name__ == '__main__':
                                                                  [tf.float32, tf.int32]),
                           num_parallel_calls=tf.data.experimental.AUTOTUNE)
 
+
     
     # ************ Shuffle and batch ************
 
@@ -162,6 +113,7 @@ if __name__ == '__main__':
     val_dataset = val_dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
 
 
+
     # ************ Model ************
 
     # mirrored_strategy = tf.distribute.MirroredStrategy()
@@ -169,7 +121,10 @@ if __name__ == '__main__':
     encoder = CNN_Encoder(CONFIG.EMBEDDING_SIZE, include_cnn_backbone=CONFIG.INCLUDE_CNN_IN_TRAINING)
     decoder = RNN_Decoder(CONFIG.EMBEDDING_SIZE, CONFIG.UNITS, CONFIG.VOCAB_SIZE)
     
+
+
     # ************ Optimizer ************
+
     initial_learning_rate = CONFIG.LEARNING_RATE
     lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(initial_learning_rate,
                                                                  decay_steps=200,
@@ -182,6 +137,13 @@ if __name__ == '__main__':
                                          epsilon=1e-7)
 
     loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True, reduction='none')
+
+
+    # ************ Evaluation ************
+
+    evaluation_handler = EvaluationHandler(encoder, decoder, tokens_manager.tokenizer, loss_object)
+    
+
 
     # ************ Checkpoints ************
 
@@ -257,15 +219,14 @@ if __name__ == '__main__':
             if CONFIG.WANDB:
                 wandb.log({'Batch Loss' : batch_loss.numpy()/int(target.shape[1])})
 
-        if epoch % 2 == 0:
-            logger.info('EVALUATING ...')
-            for (v_batch, (v_img_tensor, v_target)) in enumerate(val_dataset):
-                v_batch_loss, v_loss = train_step(v_img_tensor, v_target, tokens_manager.tokenizer, loss_object, validation=True) 
-                if v_batch % 20 == 0:
-                    logger.info(f'Epoch {epoch+1} validation Loss: {v_batch_loss.numpy() / int(v_target.shape[1])}')
-                
-                if CONFIG.WANDB:
-                    wandb.log({'Val Loss': v_batch_loss.numpy() / int(v_target.shape[1])} )
+
+        if CONFIG.EVALUATE_DURING_TRAINING:
+            if epoch % CONFIG.EVAL_STEPS == 0:
+                v_batch_loss, _, score, scores = evaluation_handler.evaluate_data(val_dataset)
+
+            if CONFIG.WANDB:
+                wandb.log({'Val Loss': v_batch_loss.numpy()}) # / int(v_target.shape[1])} )
+                wandb.log({'BLEU-1': score['BLEU'][0]})
 
         # storing the epoch end loss value to plot later
         loss_plot.append(total_loss / num_steps)

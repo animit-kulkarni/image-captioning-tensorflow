@@ -33,10 +33,12 @@ class CONFIG:
                 self.RELU_ENCODER = False
 
                 # Evaluation parameters
+                self.EVALUATE_DURING_TRAINING = True
+                self.EVAL_STEPS = 1
                 self.EVAL_BATCH_SIZE = self.BATCH_SIZE
 
                 # Experiment tracking
-                self.WANDB = True
+                self.WANDB = False
                 self.TENSORBOARD = False
                 
 

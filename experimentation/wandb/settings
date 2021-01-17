@@ -2,4 +2,6 @@
 entity = animit-kulkarni
 project = instagramcaptioner
 base_url = https://api.wandb.ai
+disabled = true
+mode = offline
 
