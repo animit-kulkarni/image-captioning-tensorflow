@@ -141,7 +141,7 @@ if __name__ == '__main__':
 
     # ************ Evaluation ************
 
-    evaluation_handler = EvaluationHandler(encoder, decoder, tokens_manager.tokenizer, loss_object)
+    evaluation_handler = EvaluationHandler(tokens_manager.tokenizer, loss_object)
     
 
 
@@ -222,11 +222,17 @@ if __name__ == '__main__':
 
         if CONFIG.EVALUATE_DURING_TRAINING:
             if epoch % CONFIG.EVAL_STEPS == 0:
-                v_batch_loss, _, score, scores = evaluation_handler.evaluate_data(val_dataset)
+                avg_scores  = evaluation_handler.evaluate_data(encoder, decoder, val_dataset, val_steps)
 
             if CONFIG.WANDB:
-                wandb.log({'Val Loss': v_batch_loss.numpy()}) # / int(v_target.shape[1])} )
-                wandb.log({'BLEU-1': score['BLEU'][0]})
+                wandb.log({'Val Loss': evaluation_handler.loss.numpy()}) # / int(v_target.shape[1])} )
+                wandb.log({'BLEU-1': avg_scores['BLEU'][0],
+                           'BLEU-2': avg_scores['BLEU'][1],
+                           'BLEU-3': avg_scores['BLEU'][2],
+                           'BLEU-4': avg_scores['BLEU'][3], 
+                           #'METEOR': score['METEOR'], 
+                           #'ROUGE': score['ROUGE']
+                           })
 
         # storing the epoch end loss value to plot later
         loss_plot.append(total_loss / num_steps)

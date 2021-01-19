@@ -38,7 +38,7 @@ class CONFIG:
                 self.EVAL_BATCH_SIZE = self.BATCH_SIZE
 
                 # Experiment tracking
-                self.WANDB = False
+                self.WANDB = True
                 self.TENSORBOARD = False
                 
 
