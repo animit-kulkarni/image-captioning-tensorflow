@@ -35,7 +35,8 @@ if CONFIG.WANDB:
     wandb.init(project="instagramcaptioner")
     wandb.config.update(CONFIG.__dict__)
 
-@tf.function
+
+# @tf.function
 def train_step(img_tensor, target, tokenizer, loss_object, validation=False):
     """Training step as tf.function to allow for gradient updates in tensorflow.
 
@@ -81,6 +82,11 @@ if __name__ == '__main__':
     tokens_manager.save_caption_file_tuples(train_captions, val_captions) # this isn't necessary for training but useful for analytical work
     tokenizer_save_path = os.path.join(CONFIG.CACHE_DIR_ROOT, f'{CONFIG.CNN_BACKBONE}_captions', f'coco_tokenizer_{CONFIG.NUMBER_OF_IMAGES}.pkl') 
     pickle.dump(tokens_manager, open(tokenizer_save_path, 'wb')) # save the tokenizer for inference
+
+    # if debugging code just take a tiny dataset
+    if CONFIG.DEBUG:
+        train_captions = train_captions[:10]
+        val_captions = val_captions[:10]
 
     # separate the filenames and captions to get correct format for dataset work
     train_dataset = tf.data.Dataset.from_tensor_slices(([t[0] for t in train_captions], [t[1] for t in train_captions]))
@@ -141,9 +147,8 @@ if __name__ == '__main__':
 
     # ************ Evaluation ************
 
-    evaluation_handler = EvaluationHandler(tokens_manager.tokenizer, loss_object)
+    evaluation_handler = EvaluationHandler(loss_object, tokens_manager.tokenizer)
     
-
 
     # ************ Checkpoints ************
 
@@ -221,8 +226,8 @@ if __name__ == '__main__':
 
 
         if CONFIG.EVALUATE_DURING_TRAINING:
-            if epoch % CONFIG.EVAL_STEPS == 0:
-                avg_scores  = evaluation_handler.evaluate_data(encoder, decoder, val_dataset, val_steps)
+            if epoch % CONFIG.EVAL_EPOCH_STEPS == 0:
+                avg_scores  = evaluation_handler.evaluate_data(val_dataset, val_steps, encoder, decoder)
 
             if CONFIG.WANDB:
                 wandb.log({'Val Loss': evaluation_handler.loss.numpy()}) # / int(v_target.shape[1])} )
@@ -231,7 +236,7 @@ if __name__ == '__main__':
                            'BLEU-3': avg_scores['BLEU'][2],
                            'BLEU-4': avg_scores['BLEU'][3], 
                            #'METEOR': score['METEOR'], 
-                           #'ROUGE': score['ROUGE']
+                           'ROUGE': avg_scores['ROUGE']
                            })
 
         # storing the epoch end loss value to plot later
