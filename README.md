@@ -26,6 +26,11 @@ The model has been trained on the MSCOCO 2014 dataset. Whilst 2 x Nvidia GeForce
 Note on dependencies:
 * When using cuda 10.1, tensorflow 2.3.1 didn't pick up GPU. Instead tensorflow 2.1. and 2.2 worked with GPU
 
+Training and Inference:
+* wandb integration
+* tensorboard integration
+* gradio - accommodates frontend for inference
+
 ## Setup and Usage
 
 ~~~

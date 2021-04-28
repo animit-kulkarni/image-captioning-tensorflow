@@ -9,7 +9,7 @@ class CONFIG:
                 self.LOGS_DIR = '/mnt/pythonfiles/users/animit/InstagramCaptioner/.logs'
 
                 # Prepare image features parameters
-                self.NUMBER_OF_IMAGES = 6000
+                self.NUMBER_OF_IMAGES = 15000
                 self.CNN_BACKBONE = 'mobilenet_v2'
                 self.INCLUDE_CNN_IN_TRAINING = False
 
@@ -18,25 +18,29 @@ class CONFIG:
                 self.BATCH_SIZE = 512
                 self.BUFFER_SIZE = 1000
                 self.EMBEDDING_SIZE = 256
-                self.UNITS = 256 # size of GRU hidden
+                self.UNITS = 128 # size of GRU hidden
                 self.VOCAB_SIZE = self.VOCABULARY_TOP_K + 1
-                self.EPOCHS = 20
+                self.EPOCHS = 50
                 self.LEARNING_RATE = 0.001
                 self.RESUME_TRAINING = {'RESUME': False,
                                         'CHECKPOINT_AND_MODEL_ID_PATH': '/mnt/pythonfiles/models/inception_v3_bahdanau/03012021-000041'}
-
                 self.DROPOUT = {'IMAGE': 0,
                                 'IMAGE_EMBEDDING': 0,
                                 'WORD_EMBEDDING': 0}
-
                 self.L2_REGULARIZATION = {'REG': False, 'WEIGHTING_CONSTANT': 1e-8}
-                self.RELU_ENCODER = False
+                self.RELU_ENCODER = True
 
                 # Evaluation parameters
+                self.EVALUATE_DURING_TRAINING = True
+                self.EVAL_STEPS = 2
                 self.EVAL_BATCH_SIZE = self.BATCH_SIZE
 
+                # Debugging
+                self.DEBUG = True
+                
                 # Experiment tracking
-                self.WANDB = True
+                self.WANDB = True 
                 self.TENSORBOARD = False
+
                 
 
