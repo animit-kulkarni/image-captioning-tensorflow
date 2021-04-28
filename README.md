@@ -48,7 +48,7 @@ git clone https://github.com/animit-kulkarni/InstagramCaptioner.git
 
 pip install -r requirements.txt
 ~~~
-2. Configure [config](config.py) file, ensuring paths for inputs and output are valid
+2. Configure [config](experimentation/config.py) file, ensuring paths for inputs and output are valid
 
 3. Download data using tensorflow api
 
