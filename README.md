@@ -39,14 +39,14 @@ pip install virtualenv
 virtualenv -p [path-to-python] venv
 
 source venv/bin/activate
-
-pip install -r requirements.txt
 ~~~
 
 1. Clone the repository
 
 ~~~
-git clone https://github.com/animit-kulkarni/InstagramCaptioner.git`
+git clone https://github.com/animit-kulkarni/InstagramCaptioner.git
+
+pip install -r requirements.txt
 ~~~
 2. Configure [config](config.py) file, ensuring paths for inputs and output are valid
 
