@@ -207,13 +207,13 @@ if __name__ == '__main__':
         start = time.time()
         total_loss = 0
 
-        for (batch, (img_tensor, target)) in enumerate(train_dataset):
+        for (batch_idx, (img_tensor, target)) in enumerate(train_dataset):
             batch_loss, t_loss = train_step(img_tensor, target, tokens_manager.tokenizer, loss_object)
             step += 1
             total_loss += t_loss
 
-            if batch % 5 == 0:
-                logger.info(f'Epoch: {epoch+1}/{CONFIG.EPOCHS} || Batch {batch+1}/{num_steps} || Loss: {batch_loss.numpy() / int(target.shape[1])}')
+            if batch_idx % 5 == 0:
+                logger.info(f'Epoch: {epoch+1}/{CONFIG.EPOCHS} || Batch {batch_idx+1}/{num_steps} || Loss: {batch_loss.numpy() / int(target.shape[1])}')
             
            
             if CONFIG.TENSORBOARD:
@@ -226,11 +226,11 @@ if __name__ == '__main__':
 
 
         if CONFIG.EVALUATE_DURING_TRAINING:
-            if epoch % CONFIG.EVAL_EPOCH_STEPS == 0:
+            if epoch % CONFIG.EVAL_STEPS == 0:
                 avg_scores  = evaluation_handler.evaluate_data(val_dataset, val_steps, encoder, decoder)
 
             if CONFIG.WANDB:
-                wandb.log({'Val Loss': evaluation_handler.loss.numpy()}) # / int(v_target.shape[1])} )
+                wandb.log({'Val Loss': evaluation_handler.loss.numpy()})
                 wandb.log({'BLEU-1': avg_scores['BLEU'][0],
                            'BLEU-2': avg_scores['BLEU'][1],
                            'BLEU-3': avg_scores['BLEU'][2],

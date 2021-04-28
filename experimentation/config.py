@@ -9,7 +9,7 @@ class CONFIG:
                 self.LOGS_DIR = '/mnt/pythonfiles/users/animit/InstagramCaptioner/.logs'
 
                 # Prepare image features parameters
-                self.NUMBER_OF_IMAGES = 6000
+                self.NUMBER_OF_IMAGES = 15000
                 self.CNN_BACKBONE = 'mobilenet_v2'
                 self.INCLUDE_CNN_IN_TRAINING = False
 
@@ -18,7 +18,7 @@ class CONFIG:
                 self.BATCH_SIZE = 512
                 self.BUFFER_SIZE = 1000
                 self.EMBEDDING_SIZE = 256
-                self.UNITS = 256 # size of GRU hidden
+                self.UNITS = 128 # size of GRU hidden
                 self.VOCAB_SIZE = self.VOCABULARY_TOP_K + 1
                 self.EPOCHS = 50
                 self.LEARNING_RATE = 0.001
@@ -32,11 +32,11 @@ class CONFIG:
 
                 # Evaluation parameters
                 self.EVALUATE_DURING_TRAINING = True
-                self.EVAL_EPOCH_STEPS = 3
+                self.EVAL_STEPS = 2
                 self.EVAL_BATCH_SIZE = self.BATCH_SIZE
 
                 # Debugging
-                self.DEBUG = False
+                self.DEBUG = True
                 
                 # Experiment tracking
                 self.WANDB = True 

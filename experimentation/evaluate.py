@@ -67,8 +67,9 @@ class EvaluationHandler:
     def _evaluate_batch(self, img_tensor, target):
         
         self.loss, self.total_loss, predicted_ids = self._forward_pass(img_tensor, target)
-        predicted_ids = np.array(predicted_ids).reshape(-1, 46) #TODO: remove hardcoding
-        print('finished forward pass')
+        self.loss = self.loss/(int(target.shape[1]))
+
+        predicted_ids = np.array(predicted_ids).reshape(-1) #TODO: remove 46 hardcoding
 
         cleaned_target = self._tokens_to_captions(target, self.special_tokens)
         cleaned_predicted_tokens = self._tokens_to_captions(predicted_ids, self.special_tokens)
@@ -76,14 +77,12 @@ class EvaluationHandler:
         ground_truth_captions = {f'{k}':v for (k, v) in enumerate(cleaned_target)}
         predicted_captions = {f'{k}':v for (k, v) in enumerate(cleaned_predicted_tokens)}
 
-        print('computing scores')
         score, scores = compute_scores(ground_truth_captions, predicted_captions)
         score = self._clean_coco_scores_output(score)
                
         # for gt, pred in zip(ground_truth_captions.values(), predicted_captions.values()):            
         #     score = self.bleu_score(gt, pred, verbose=False)
         
-        print(score)
         return score
     
     @tf.function

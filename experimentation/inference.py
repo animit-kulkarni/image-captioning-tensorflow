@@ -238,13 +238,15 @@ class GardioController:
 
 if __name__ == '__main__':
 
+
+    GRADIO = False
+
     tokenizer_path = os.path.join(CONFIG.CACHE_DIR_ROOT, f'{CONFIG.CNN_BACKBONE}_captions', f'coco_tokenizer_{CONFIG.NUMBER_OF_IMAGES}.pkl') 
-    checkpoint_path = '/mnt/pythonfiles/models/mobilenet_v2_bahdanau/25012021-212906'
+    checkpoint_path = '/mnt/pythonfiles/models/mobilenet_v2_bahdanau/06022021-193842'
 
     caption_bot = InstgramCaptioner(checkpoint_path, tokenizer_path, CONFIG)
     caption_filename_tuple_path = os.path.join(CONFIG.CACHE_DIR_ROOT, f'{CONFIG.CNN_BACKBONE}_captions', f'caption_filename_tuple_{CONFIG.NUMBER_OF_IMAGES}.pkl')
     
-    # idx = int(sys.argv[1])
     # some of my favourites:
     # 56 - colorful bird pic
     # 451 - a group of people are flying kites on a field
@@ -255,24 +257,30 @@ if __name__ == '__main__':
     # mobilenet_v2_bahdanau/25012021-212906
     # 31122020-180918
 
-    # caption_bot.test_img_from_mscoco(idx, caption_filename_tuple_path)
+    if not GRADIO:
 
-    # ALL_IMG_BASE_DIR = '/mnt/pythonfiles/training-sets/raw/MSCOCO/train2014'
-
-    # all_img_dir = os.listdir(ALL_IMG_BASE_DIR)
-
-    # my_img = cv2.imread(os.path.join(ALL_IMG_BASE_DIR, all_img_dir[0]))
-    # caption_bot.generate_caption(my_img)
+        idx = int(sys.argv[1])
 
 
-    inputs = gr.inputs.Image()
+        caption_bot.test_img_from_mscoco(idx, caption_filename_tuple_path)
 
-    outputs = gr.outputs.Textbox('str')
+        # ALL_IMG_BASE_DIR = '/mnt/pythonfiles/training-sets/raw/MSCOCO/train2014'
 
-    def run_demo(img):
-        result, _ = caption_bot.generate_caption(img)
-        return ' '.join(result)
+        # all_img_dir = os.listdir(ALL_IMG_BASE_DIR)
+
+        # my_img = cv2.imread(os.path.join(ALL_IMG_BASE_DIR, all_img_dir[0]))
+        # caption_bot.generate_caption(my_img)
+
+    else:
+
+        inputs = gr.inputs.Image()
+
+        outputs = gr.outputs.Textbox('str')
+
+        def run_demo(img):
+            result, _ = caption_bot.generate_caption(img)
+            return ' '.join(result)
 
 
-    gr.Interface(fn=run_demo, inputs=inputs, outputs=outputs).launch()
+        gr.Interface(fn=run_demo, inputs=inputs, outputs=outputs).launch()
 
